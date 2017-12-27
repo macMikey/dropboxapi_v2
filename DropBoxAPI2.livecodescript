@@ -28,7 +28,7 @@ SOFTWARE.
 Version Notes
 
 v2.0
-added
+added or updated
 file_properties-properties_add
 file_properties-properties_overwrite
 file_properties-properties_remove
@@ -40,14 +40,46 @@ file_properties-templates_get_for_user
 file_properties-templates_list_for_user
 file_properties-templates_remove_for_user
 file_properties-templates_update_for_user
+file_requests-create
+file_requests-get
+file_requests-list
+file_requests-update
 files-copy_batch
 files-copy_batch_check
+files-copy_reference_get
+files-copy_reference_save
+files-copy_v2
+files-create_folder_v2
 files-delete_batch
 files-delete_batch_check
+files-delete_v2
+files-download
 files-download_zip
+files-get_metadata
+files-get_preview
+files-get_temporary_link
+files-get_thumbnail
 files-get_thumbnail_batch
+files-list_folder
+files-list_folder_continue
+files-list_folder_get_latest_cursor
+files-list_folder_longpoll
+files-list_revisions
 files-move_batch
 files-move_batch_check
+files-move_v2
+files-permanently_delete
+files-restore
+files-save_url
+files-save_url_check_job_status
+files-search
+files-upload
+files-upload_session_append_v2
+files-upload_session_finish
+files-upload_session_finish_batch
+files-upload_session_finish_batch_check
+files-upload_session_start
+
 sharing-update_file_member
 
 deprecated, removed and replaced with:
