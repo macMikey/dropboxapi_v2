@@ -80,6 +80,24 @@ files-upload_session_finish_batch
 files-upload_session_finish_batch_check
 files-upload_session_start
 
+Paper Yet to add:
+paper-docs_archive
+paper-docs_create
+paper-docs_download
+paper-docs_folder_users_list
+paper-docs_folder_users_list_continue
+paper-docs_get_folder_info
+paper-docs_list  --only paper added in v2.0
+paper-docs_list_continue
+paper-docs_permanently_delete
+paper-docs_sharing_policy_get
+paper-docs_sharing_policy_set
+paper-docs_update
+paper-docs_users_add
+paper-docs_users_list
+paper-docs_users_list_continue
+paper-docs_users_remove
+
 sharing-update_file_member
 
 deprecated, removed and replaced with:
@@ -114,8 +132,6 @@ db2_Header_APISessionStart
 db2_Header_APIUpload
 
 Renamed common string functions to use the db2_ prefix eg. db2_SB, db2_Q, db2_CB
-
-All db2 calls checked and updated where needed
 
 --------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------
@@ -296,6 +312,7 @@ by setting view-only permissions.
 
 -----------------------------------------------------------------------------
 --------auth---------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 /**
 db2_token_revoke pAccessToken
@@ -318,6 +335,7 @@ end db2_token_revoke
 
 -----------------------------------------------------------------------------
 ---------users-----------------------------------------------------------
+-----------------------------------------------------------------------------
 
 /**
 db2_get_account pAccessToken,pUserAccountID
@@ -503,6 +521,507 @@ function db2_get_space_usage pAccessToken
    put db2_get_space_usage_URL() into tUrl
    return db2_API2(tHeader,tPost,tUrl)
 end db2_get_space_usage
+
+-----------------------------------------------------------------------------
+-------file properties--------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+/**
+db2_properties_add pAccessToken,pPath,pPropertyGroupsArray
+--
+Description
+Add property groups to a Dropbox file.
+See templates/add_for_user  to create new templates. 
+--
+use pPropertyGroupsArray to store template_id, and field name, value eg:
+pPropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
+pPropertyGroupsArray[1][fields][1][name]=	Name
+pPropertyGroupsArray[1][fields][1][value]=	me
+pPropertyGroupsArray[1][fields][2][name]=	Age
+pPropertyGroupsArray[1][fields][2][value]=	21
+pPropertyGroupsArray[2][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAXXb
+pPropertyGroupsArray[2][fields][1][name]=	Topic
+pPropertyGroupsArray[2][fields][1][value]=	Science
+pPropertyGroupsArray[2][fields][2][name]=	SubTopic
+pPropertyGroupsArray[2][fields][2][value]=	Biology
+--
+for POST
+{"path": "/folder1/testfile1.txt",
+"property_groups": [
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa","fields": [{"name": "name","value": "me"},{"name": "age","value": "21"}]},
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAXXb","fields": [{"name": "Topic","value": "Science"},{"name": "SubTopic","value": "Biology"}]}
+]}
+--
+AddPropertiesArg
+#--path String(pattern="/(.|[\r\n])*|id:.*|(ns:[0-9]+(/.*)?)") A unique identifier for the file or folder.
+#--property_groups List of (PropertyGroup) The property groups which are to be added to a Dropbox file.
+PropertyGroup
+A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. 
+The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate.
+#--#--template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
+#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
+PropertyField
+Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup.
+#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
+#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
+--
+Returns
+null
+No return values.
+*/
+
+function db2_properties_add pAccessToken,pPath,pPropertyGroupsArray
+   local tHeader,tPost,tUrl
+   put db2_properties_add_HEADER(pAccessToken) into tHeader
+   put db2_properties_add_POST(pPath,pPropertyGroupsArray) into tPost
+   put db2_properties_add_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_properties_add
+
+/**
+db2_properties_overwrite pAccessToken,pPath,pPropertyGroupsArray
+--
+Description
+Overwrite property groups associated with a file. 
+This endpoint should be used instead of properties/update when property groups are being updated via a "snapshot" instead of via a "delta". 
+In other words, this endpoint will delete all omitted fields from a property group, whereas properties/update will only delete fields that are explicitly marked for deletion.
+See: https://blogs.dropbox.com/developers/2013/07/how-the-datastore-api-handles-conflicts-part-1-basics-of-offline-conflict-handling/
+--
+use pPropertyGroupsArray to store template_id, and field name, value eg:
+pPropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
+pPropertyGroupsArray[1][fields][1][name]=	Name
+pPropertyGroupsArray[1][fields][1][value]=	me
+pPropertyGroupsArray[1][fields][2][name]=	Age
+pPropertyGroupsArray[1][fields][2][value]=	21
+pPropertyGroupsArray[2][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAXXb
+pPropertyGroupsArray[2][fields][1][name]=	Topic
+pPropertyGroupsArray[2][fields][1][value]=	Science
+pPropertyGroupsArray[2][fields][2][name]=	SubTopic
+pPropertyGroupsArray[2][fields][2][value]=	Biology
+--
+for POST
+{"path": "/folder1/testfile1.txt",
+"property_groups": [
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa","fields": [{"name": "name","value": "me"},{"name": "age","value": "21"}]},
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAXXb","fields": [{"name": "Topic","value": "Science"},{"name": "SubTopic","value": "Biology"}]}
+] }
+--
+OverwritePropertyGroupArg
+#--path String(pattern="/(.|[\r\n])*|id:.*|(ns:[0-9]+(/.*)?)") A unique identifier for the file or folder.
+#--property_groups List of (PropertyGroup, min_items=1) The property groups "snapshot" updates to force apply.
+PropertyGroup
+A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. 
+The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate.
+template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
+#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
+PropertyField
+Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup.
+#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
+#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
+--
+Returns
+null
+No return values. 
+*/
+
+function db2_properties_overwrite pAccessToken,pPath,pPropertyGroupsArray
+   local tHeader,tPost,tUrl
+   put db2_properties_overwrite_HEADER(pAccessToken) into tHeader
+   put db2_properties_overwrite_POST(pPath,pPropertyGroupsArray) into tPost
+   put db2_properties_overwrite_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_properties_overwrite
+
+/**
+db2_properties_remove pAccessToken,pPath,pTemplateIDs
+--
+Description
+Permanently removes the specified property group from the file. 
+To remove specific property field key value pairs, see properties/update. 
+To update a template, see templates/update_for_user. 
+--
+pass pTemplateIDs with ids on separate lines, include "ptid" with id
+--
+for POST
+{"path": "/Apps/AppTesterAppFolderUser2/TestFolder/testfile.txt","property_template_ids": ["ptid:562VTx1rtSMAAAAAAAACaA"]}
+--
+RemovePropertiesArg
+#--path String(pattern="/(.|[\r\n])*|id:.*|(ns:[0-9]+(/.*)?)") A unique identifier for the file.
+#--property_template_ids List of (String(min_length=1, pattern="(/|ptid:).*"), ) A list of identifiers for a property template created by route properties/template/add. 
+--
+Returns
+null
+No return values. 
+*/
+
+function db2_properties_remove pAccessToken,pPath,pTemplateIDs
+   local tHeader,tPost,tUrl
+   put db2_properties_remove_HEADER(pAccessToken) into tHeader
+   put db2_properties_remove_POST(pPath,pTemplateIDs) into tPost
+   put db2_properties_remove_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_properties_remove
+
+/**
+db2_properties_search pAccessToken,pQueryText,pQueryMode,pQueryModeField,pLogicalOperator,pFilterTemplateIDs
+--
+Description
+Search across property templates for particular property field values.
+--
+for POST
+{"queries":[{"query":"gmc","mode":{".tag":"field_name","field_name":"name"}}]}
+--
+{"queries":[{"query":"gmc","mode":{".tag":"field_name","field_name":"name"}}],"template_filter":{".tag":"filter_none"}}
+--
+{"queries": [{"query": "gmc","mode": {".tag": "field_name", "field_name": "name"},"logical_operator": "or_operator"}],"template_filter": "filter_none"}
+--
+{"queries": [{"query": "gmc","mode": {".tag": "field_name", "field_name": "name"},"logical_operator": "or_operator"}],
+"template_filter":{".tag":"filter_some","filter_some":["ptid:562VTx1rtSMAAAAAAAACaA","ptid:562VTx1rtSMAAAAAAAACaX"]}}
+--
+{"queries":[{"query":"gmc",
+"mode":{".tag":"field_name","field_name":"name"},
+"logical_operator":{".tag":"or_operator"}},
+{"query":"21",
+"mode":{".tag":"field_name","field_name":"age"},
+"logical_operator":{".tag":"or_operator"}}],
+"template_filter":{".tag":"filter_some","filter_some":["ptid:562VTx1rtSMAAAAAAAACaA","ptid:562VTx1rtSMAAAAAAAACaX"]}}
+--
+PropertiesSearchArg
+#--queries List of (PropertiesSearchQuery, min_items=1) Queries to search.
+PropertiesSearchQuery
+#--#--query String The property field value for which to search across templates.
+#--#--mode PropertiesSearchMode The mode with which to perform the search.
+PropertiesSearchMode (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--#--field_name String Search for a value associated with this field name.
+#--#--logical_operator LogicalOperator The logical operator with which to append the query. The default for this union is or_operator.
+LogicalOperator (open union)
+Logical operator to join search queries together. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--#--#--or_operator Void Append a query with an "or" operator.
+#--template_filter TemplateFilter Filter results to contain only properties associated with these template IDs. The default for this union is filter_none.
+TemplateFilter (union)
+The value will be one of the following datatypes:
+#--#--filter_some List of (String(min_length=1, pattern="(/|ptid:).*"), min_items=1) Only templates with an ID in the supplied list will be returned (a subset of templates will be returned).
+#--#--filter_none Void No templates will be filtered from the result (all templates will be returned).
+--
+Returns
+{"matches": [{"id": "id:F5QvTmxtJVAAAAAAAAAAAQ", "path": "/TestFolder/testfile.txt", "is_deleted": false, "property_groups": 
+[{"template_id": "ptid:562VTx1rtSMAAAAAAAACaA", "fields": 
+[{"name": "gender", "value": "M"}, {"name": "age", "value": "21"}, {"name": "name", "value": "gmc"}]}]}]}
+--
+PropertiesSearchResult
+#--matches List of (PropertiesSearchMatch) A list (possibly empty) of matches for the query.
+PropertiesSearchMatch
+#--#--id String(min_length=1) The ID for the matched file or folder.
+#--#--path String The path for the matched file or folder.
+#--#--is_deleted Boolean Whether the file or folder is deleted.
+#--#--property_groups List of (PropertyGroup) List of custom property groups associated with the file.
+PropertyGroup
+A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate.
+#--#--#--template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
+#--#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
+PropertyField
+Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup.
+#--#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
+#--#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
+#--cursor String(min_length=1)? Pass the cursor into properties/search/continue to continue to receive search results. Cursor will be null when there are no more results. This field is optional.
+*/
+
+function db2_properties_search pAccessToken,pQueryText,pQueryField,pQueryMode,pLogicalOperator,pFilterTemplateIDs
+   local tHeader,tPost,tUrl
+   put db2_properties_search_HEADER(pAccessToken) into tHeader
+   put db2_properties_search_POST(pQueryText,pQueryField,pQueryMode,pLogicalOperator,pFilterTemplateIDs) into tPost
+   put db2_properties_search_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_properties_search
+
+/**
+db2_properties_search_continue pAccessToken,pSearchCursor
+--
+Description
+Once a cursor has been retrieved from properties/search, use this to paginate through all search results. 
+--
+for POST
+{"cursor": "ZtkX9_EHj3x7PMkVuFIhwKYXEpwpLwyxp9vMKomUhllil9q7eWiAu"}
+--
+PropertiesSearchContinueArg
+#--cursor String(min_length=1) The cursor returned by your last call to properties/search or properties/search/continue.
+--
+Returns
+{"matches": [{"id": "id:F5QvTmxtJVAAAAAAAAAAAQ", "path": "/TestFolder/testfile.txt", "is_deleted": false, "property_groups": 
+[{"template_id": "ptid:562VTx1rtSMAAAAAAAACaA", "fields": 
+[{"name": "gender", "value": "M"}, {"name": "age", "value": "21"}, {"name": "name", "value": "gmc"}]}]}]}
+--
+PropertiesSearchResult
+#--matches List of (PropertiesSearchMatch) A list (possibly empty) of matches for the query.
+PropertiesSearchMatch
+#--#--id String(min_length=1) The ID for the matched file or folder.
+#--#--path String The path for the matched file or folder.
+#--#--is_deleted Boolean Whether the file or folder is deleted.
+#--#--property_groups List of (PropertyGroup) List of custom property groups associated with the file.
+PropertyGroup
+A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate.
+#--#--#--template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
+#--#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
+PropertyField
+Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup.
+#--#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
+#--#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
+#--cursor String(min_length=1)? Pass the cursor into properties/search/continue to continue to receive search results. Cursor will be null when there are no more results. This field is optional.
+*/
+
+function db2_properties_search_continue pAccessToken,pSearchCursor
+   local tHeader,tPost,tUrl
+   put db2_properties_search_continue_HEADER(pAccessToken) into tHeader
+   put db2_properties_search_continue_POST(pSearchCursor) into tPost
+   put db2_properties_search_continue_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_properties_search_continue
+
+/**
+db2_properties_update pAccessToken,pPath,pUpdatePropertyGroupsArray
+--
+Description
+Add, update or remove properties associated with the supplied file and templates. 
+This endpoint should be used instead of properties/overwrite when property groups are being updated via a "delta" instead of via a "snapshot" . 
+In other words, this endpoint will not delete any omitted fields from a property group, 
+whereas properties/overwrite will delete any fields that are omitted from a property group. 
+--
+use pUpdatePropertyGroupsArray to store template_id, name, value  eg:
+pUpdatePropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
+use pUpdatePropertyGroupsArray to store template_id, name, value  eg:
+pUpdatePropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
+pUpdatePropertyGroupsArray[1][add_or_update_fields][1][name]=	Name
+pUpdatePropertyGroupsArray[1][add_or_update_fields][1][value]=	me
+pUpdatePropertyGroupsArray[1][add_or_update_fields][2][name]=	Age
+pUpdatePropertyGroupsArray[1][add_or_update_fields][2][value]=	21
+pUpdatePropertyGroupsArray[1][remove_fields]=	Gender & cr & Race  cr delimited list of fields to remove
+pUpdatePropertyGroupsArray[2][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAXXb
+pUpdatePropertyGroupsArray[2][add_or_update_fields][1][name]=	Topic
+pUpdatePropertyGroupsArray[2][add_or_update_fields][1][value]=	Science
+pUpdatePropertyGroupsArray[2][remove_fields]=	SubTopic
+
+--
+for POST
+{"path": "folder1/testfile2.txt",
+"update_property_groups": [{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa",
+"add_or_update_fields": [{"name": "Security Policy","value": "Confidential"}],
+"remove_fields": []}
+]}
+
+{"path": "/folder1/testfile1.txt",
+"update_property_groups": [
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa",
+"add_or_update_fields": [{"name": "name","value": "me"},{"name": "age","value": "21"}],
+"remove_fields": ["Gender","Race"]},
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAXXb",
+add_or_update_fields": [{"name": "Topic","value": "Science"}],
+"remove_fields": ["SubTopic"]}
+]}
+--
+UpdatePropertyGroupArg
+#--path String(pattern="/(.|[\r\n])*|id:.*|(ns:[0-9]+(/.*)?)") A unique identifier for the file. 
+#--update_property_groups List of (PropertyGroupUpdate) Filled custom property templates associated with a file.
+PropertyGroupUpdate
+#--template_id String A unique identifier for a property template.
+#--add_or_update_fields List of (PropertyField)? List of property fields to update if the field already exists. 
+If the field doesn't exist, add the field to the property group. 
+This field is optional.
+PropertyField
+This datatype comes from an imported namespace originally defined in the properties namespace.
+#-- #--name String This is the name or key of a custom property in a property template. File property names can be up to 256 bytes.
+#-- #--value String Value of a custom property attached to a file. Values can be up to 1024 bytes.
+#--remove_fields List of (String)? List of property field names to remove from property group if the field exists. 
+This field is optional.
+--Returns
+No return values. 
+*/ 
+
+function db2_properties_update pAccessToken,pPath,pUpdatePropertyGroupsArray
+   local tHeader,tPost,tUrl
+   put db2_properties_update_HEADER(pAccessToken) into tHeader
+   put db2_properties_update_POST(pPath,pUpdatePropertyGroupsArray) into tPost
+   put db2_properties_update_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_properties_update
+
+-----------------------------------------------------------------------------
+-------file properties templates--------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+/**
+db2_templates_add_for_user pAccessToken,pTemplateName,pTemplateDescription,pFieldsArray
+--
+Description
+Add a specified template.
+Apps must have full Dropbox access to use this endpoint.
+--
+pFieldsArray would be an array containing the field names and descriptions and types (string)
+pFieldsArray[1]["name"]...[2]["name"] etc
+pFieldsArray[1][name]=	Name
+pFieldsArray[1][description]=	Enter name
+pFieldsArray[1][type]=	string
+pFieldsArray[2][name]=	Age
+pFieldsArray[2][description]=	Enter age
+pFieldsArray[2][type]=	string
+--
+For POST
+{"name": "UserInfo","description": "UserInfo template.",
+"fields": [{"name": "name","description": "Enter name.","type": "string"},
+{"name": "age","description": "Enter age.","type": "string"},
+{"name": "gender","description": "Enter gender.","type": "string"}]}
+--
+AddTemplateArg
+#--name String Display name for the template. Template names can be up to 256 bytes.
+#--description String Description for the template. Template descriptions can be up to 1024 bytes.
+#--fields List of (PropertyFieldTemplate) Definitions of the property fields associated with this template. There can be up to 32 properties in a single template.
+PropertyFieldTemplate
+Defines how a single property field may be structured. Used exclusively by PropertyGroupTemplate.
+#--#--name String Key of the property field being described. Property field keys can be up to 256 bytes.
+#--#--description String Description of the property field. Property field descriptions can be up to 1024 bytes.
+#--#--type PropertyType Data type of the value of this property field. This type will be enforced upon property creation and modifications.
+PropertyType (open union)
+Data type of the given property field added. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--#--string Void The associated property field will be of type string. Unicode is supported.
+--
+*Returns
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa"}
+AddTemplateResult
+#--template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for template added by templates/add_for_user
+*/
+
+function db2_templates_add_for_user pAccessToken,pTemplateName,pTemplateDescription,pFieldsArray
+   local tHeader,tPost,tUrl
+   put db2_templates_add_for_user_HEADER(pAccessToken) into tHeader
+   put db2_templates_add_for_user_POST(pTemplateName,pTemplateDescription,pFieldsArray) into tPost
+   put db2_templates_add_for_user_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_templates_add_for_user
+
+/**
+db2_templates_get_for_user pAccessToken,pTemplateID
+--
+Description
+Get the schema for a specified template.
+Apps must have full Dropbox access to use this endpoint.
+--
+GetTemplateArg
+#--template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for template added by templates/add_for_user 
+--
+For POST
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa"}
+--
+Returns
+GetTemplateResult
+#--name String Display name for the template. Template names can be up to 256 bytes.
+#--description String Description for the template. Template descriptions can be up to 1024 bytes.
+#--fields List of (PropertyFieldTemplate) Definitions of the property fields associated with this template. There can be up to 32 properties in a single template.
+PropertyFieldTemplate
+Defines how a single property field may be structured. Used exclusively by PropertyGroupTemplate.
+#--#--name String Key of the property field being described. Property field keys can be up to 256 bytes.
+#--#--description String Description of the property field. Property field descriptions can be up to 1024 bytes.
+#--#--type PropertyType Data type of the value of this property field. This type will be enforced upon property creation and modifications.
+*/
+
+function db2_templates_get_for_user pAccessToken,pTemplateID
+   local tHeader,tPost,tUrl
+   put db2_templates_get_for_user_HEADER(pAccessToken) into tHeader
+   put db2_templates_get_for_user_POST(pTemplateID) into tPost
+   put db2_templates_get_for_user_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_templates_get_for_user
+
+/**
+db2_templates_list_for_user pAccessToken
+--
+Description
+Get the property template identifiers for a user.
+Apps must have full Dropbox access to use this endpoint.
+--
+Returns
+{"template_ids": ["ptid:1a5n2i6d3OYEAAAAAAAAAYa","ptid:1a5n2i6d3OYEAAAAAAAAXXB"]}
+ListTemplateResult
+#--template_ids List of (String(min_length=1, pattern="(/|ptid:).*")) List of identifiers for templates added by templates/add_for_user
+*/
+
+function db2_templates_list_for_user pAccessToken
+   local tHeader,tPost,tUrl
+   put db2_templates_list_for_user_HEADER(pAccessToken) into tHeader
+   put db2_templates_list_for_user_POST() into tPost
+   put db2_templates_list_for_user_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_templates_list_for_user
+
+/**
+db2_templates_remove_for_user pAccessToken,pTemplateID
+--
+Description
+Permanently removes the specified template created from templates/add_for_user. 
+All properties associated with the template will also be removed. This action cannot be undone.
+Apps must have full Dropbox access to use this endpoint.
+--
+pTemplateID is one id only; can't delete multiple ids in one call.
+--
+for POST
+{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa"}
+--
+RemoveTemplateArg
+template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for a template added by templates/add_for_user 
+--
+Returns
+null. No return values. 
+*/
+
+function db2_templates_remove_for_user pAccessToken,pTemplateID
+   local tHeader,tPost,tUrl
+   put db2_templates_list_for_user_HEADER(pAccessToken) into tHeader
+   put db2_templates_list_for_user_POST(pTemplateID) into tPost
+   put db2_templates_list_for_user_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_templates_remove_for_user
+
+/**
+db2_templates_update_for_user pAccessToken,pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray
+--
+Description
+Update a template associated with a user. 
+This route can update  the template name, the template description and add optional properties  to templates.
+Apps must have full Dropbox access to use this endpoint.
+--
+pFieldsArray would be an array containing the field names and descriptions and types (string)
+pFieldsArray[1][name]=	Me
+pFieldsArray[1][description]=	Full name
+pFieldsArray[1][type]=	string
+--
+Since the last 3 params are optional pass those not being updated as empty "" so any one of them can be updated
+If a field name is passed that is already present it will not overwrite the field --just ignored.
+--
+for POST
+{"template_id": "ptid:562VTx1rtSMAAAAAAAACYg", "name": "UserInfo","description": "UserInfo template.",
+"add_fields": [{"name": "name","description": "Enter name.","type": "string"},
+{"name": "age","description": "Enter age.","type": "string"},
+{"name": "gender","description": "Enter gender.","type": "string"}]}
+--
+UpdateTemplateArg
+#--template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for template added by templates/add_for_user
+#--name String? A display name for the template. template names can be up to 256 bytes. This field is optional.
+#--description String? Description for the new template. Template descriptions can be up to 1024 bytes. This field is optional.
+#--add_fields List of (PropertyFieldTemplate)? Property field templates to be added to the group template. There can be up to 32 properties in a single template. This field is optional.
+--
+Returns
+{"template_id": ["ptid:562VTx1rtSMAAAAAAAACYg"]}
+UpdateTemplateResult
+#--template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for template added by route templates/add_for_user
+*/
+
+function db2_templates_update_for_user pAccessToken,pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray
+   local tHeader,tPost,tUrl
+   put db2_templates_list_for_user_HEADER(pAccessToken) into tHeader
+   put db2_templates_list_for_user_POST(pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray) into tPost
+   put db2_templates_list_for_user_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_templates_update_for_user
+
 
 -----------------------------------------------------------------------------
 ---------file requests-------------------------------------------
@@ -746,840 +1265,6 @@ end db2_update
 -----------------------------------------------------------------------------
 
 /**
-db2_get_metadata pAccessToken,pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,pIncludePropertyTemplateIDs
---
-Description
-Returns the metadata for a file or folder.
-Note: Metadata for the root folder is unsupported.
---
-pIncludePropertyTemplateIDs needs to be a list of templates one per line; e.g. ptid:562VTx1rtSMAAAAAAAACYg
---
-for POST
-{"path":"/folder1/testfile1.txt"}
-{"path": "/folder1/testfile1.txt","include_media_info": false,"include_deleted": false,"include_has_explicit_shared_members": false}
-{"path":"/Apps/AppTesterAppFolderUser2/TestFolder/testfile.txt","include_media_info": false,"include_deleted": true,"include_has_explicit_shared_members": true,
-"include_property_groups":{".tag":"filter_some","filter_some":["ptid:562VTx1rtSMAAAAAAAACYg"]}}
---
-GetMetadataArg
-#--path String(pattern="(/(.|[\r\n])*|id:.*)|(rev:[0-9a-f]{9,})|(ns:[0-9]+(/.*)?)") 
-The path of a file or folder on Dropbox.
-#--include_media_info Boolean 
-If true, FileMetadata.media_info is set for photo and video. The default for this field is False.
-#--include_deleted Boolean 
-If true, DeletedMetadata will be returned for deleted file or folder, otherwise LookupError.not_found will be returned. The default for this field is False.
-#--include_has_explicit_shared_members Boolean 
-If true, the results will include a flag for each file indicating whether or not that file has any explicit members. The default for this field is False.
-#--include_property_groups TemplateFilterBase? 
-If set to a valid list of template IDs, FileMetadata.property_groups is set if there exists property data associated with the file and each of the listed templates. This field is optional.
-TemplateFilterBase (open union)
-This datatype comes from an imported namespace originally defined in the file_properties namespace. 
-The value will be one of the following datatypes. New values may be introduced as our API evolves.
-#--#--filter_some List of (String(min_length=1, pattern="(/|ptid:).*"), min_items=1) 
-Only templates with an ID in the supplied list will be returned (a subset of templates will be returned).
---
-Returns
-Metadata (datatype with subtypes)
-Metadata for a file or folder. This datatype will be one of the following subtypes:
-file FileMetadata
-folder FolderMetadata
-deleted DeletedMetadata
-*/
-
-function db2_get_metadata pAccessToken,pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,pIncludePropertyTemplateIDs
-   local tHeader,tPost,tUrl
-   put db2_get_metadata_HEADER(pAccessToken) into tHeader
-   put db2_get_metadata_POST(pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,pIncludePropertyTemplateIDs) into tPost
-   put db2_get_metadata_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_get_metadata
-
-/**
-db2_upload pAccessToken,pPath,pData,pMode,pAutorename,pClientModified,pMute,pPropertyGroupsArray
---
-Description
-Create a new file with the contents provided in the request.
-Do not use this to upload a file larger than 150 MB. Instead, create an upload session with upload_session/start. 
---
-if mode is update also need string for the rev value for the file    "mode": {".tag": "update", "update": "a1c10ce0dd78" }
-pass Mode as 2 line string if update eg: update & cr & a1c10ce0dd78
---
-pPropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
-pPropertyGroupsArray[1][fields][1][name]=	Name
-pPropertyGroupsArray[1][fields][1][value]=	me
---
-for header
-Dropbox-API-Arg: {"path":"/folder3/testfile1.txt","mode":"overwrite","autorename":false,"mute":true}
-Dropbox-API-Arg: {"path":"/folder3/testfile1.txt","mode":"overwrite","autorename":false, \
-      "client_modified": "2017-12-24T20:58:03Z","mute":false,"property_groups": [{"template_id": "ptid:562VTx1rtSMAAAAAAAACaA", \
-      "fields": [{"name": "name","value": "gmc"},{"name": "age","value": "21"},{"name": "gender","value": "M"}]}]}
---
-CommitInfo
-#--path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") 
-Path in the user's Dropbox to save the file.
-#--mode WriteMode 
-Selects what to do if the file already exists. The default for this union is add.
-WriteMode (union)
-Your intent when writing a file to some path. This is used to determine what constitutes a conflict and what the autorename strategy is.
-In some situations, the conflict behavior is identical: (a) If the target path doesn't refer to anything, the file is always written; no conflict. 
-(b) If the target path refers to a folder, it's always a conflict. (c) If the target path refers to a file with identical contents, nothing gets written; no conflict.
-The conflict checking differs in the case where there's a file at the target path with contents different from the contents you're trying to write. 
-The value will be one of the following datatypes:
-#--#--add Void Do not overwrite an existing file if there is a conflict. The autorename strategy is to append a number to the file name. 
-For example, "document.txt" might become "document (2).txt".
-#--#--overwrite Void Always overwrite the existing file. The autorename strategy is the same as it is for add.
-#--#--update String(min_length=9, pattern="[0-9a-f]+") Overwrite if the given "rev" matches the existing file's "rev". 
-The autorename strategy is to append the string "conflicted copy" to the file name. 
-For example, "document.txt" might become "document (conflicted copy).txt" or "document (Panda's conflicted copy).txt".
-#--autorename Boolean If there's a conflict, as determined by mode, have the Dropbox server try to autorename the file to avoid conflict. 
-The default for this field is False.
-#--client_modified Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? The value to store as the client_modified timestamp. 
-Dropbox automatically records the time at which the file was written to the Dropbox servers. 
-It can also record an additional timestamp, provided by Dropbox desktop clients, mobile clients, 
-and API apps of when the file was actually created or modified. This field is optional.
-#--mute Boolean Normally, users are made aware of any file modifications in their Dropbox account via notifications in the client software. 
-If true, this tells the clients that this modification shouldn't result in a user notification. The default for this field is False.
-#--property_groups List of (PropertyGroup)? List of custom properties to add to file. This field is optional.
-PropertyGroup
-A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. 
-The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate. 
-This datatype comes from an imported namespace originally defined in the file_properties namespace.
-#--#--template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
-#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
-PropertyField
-Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup. 
-This datatype comes from an imported namespace originally defined in the file_properties namespace.
-#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
-#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
---
-Returns
-FileMetadata
-*/
-
-function db2_upload pAccessToken,pPath,pData,pMode,pAutorename,pClientModified,pMute,pPropertyGroupsArray
-   local tHeader,tPost,tUrl
-   put db2_upload_HEADER(pAccessToken,pPath,pMode,pAutorename,pClientModified,pMute,pPropertyGroupsArray) into tHeader
-   put db2_upload_POST(pData) into tPost
-   put db2_upload_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_upload
-
-/**
-db2_copy_reference_get pAccessToken,pPath
---
-Description
-Get a copy reference to a file or folder. 
-This reference string can be used to save that file or folder to another user's Dropbox by passing it to copy_reference/save. 
---
-GetCopyReferenceArg
-path String(pattern="(/(.|[\r\n])*|id:.*)|(rev:[0-9a-f]{9,})|(ns:[0-9]+(/.*)?)") 
-The path to the file or folder you want to get a copy reference to.
---
-for POST
-{"path": "/folder1"}
-{"path": "/folder1/testfile2.txt"}
---
-Returns
-GetCopyReferenceResult
-metadata Metadata 
-Metadata for a file or folder. This datatype will be one of the following subtypes:
-file FileMetadata
-folder FolderMetadata
-deleted DeletedMetadata
-copy_reference String A copy reference to the file or folder.
-expires Timestamp(format="%Y-%m-%dT%H:%M:%SZ") The expiration date of the copy reference. 
-This value is currently set to be far enough in the future so that expiration is effectively not an issue. 
-*/
-
-function db2_copy_reference_get pAccessToken,pPath
-   local tHeader,tPost,tUrl
-   put db2_copy_reference_get_HEADER(pAccessToken) into tHeader
-   put db2_copy_reference_get_POST(pPath) into tPost
-   put db2_copy_reference_get_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_copy_reference_get
-
-/**
-db2_copy_reference_save pAccessToken,pCopyReference,pPath
---
-Description
-Save a copy reference returned by copy_reference/get to the user's Dropbox. 
---
-for POST
-{"copy_reference":"AAAAAErJ_Yk5YWJlbmtweWVrZm0","path":"/folder1/testfile1a.txt"}
-{"copy_reference":"AAAAAErJ_Yk3ampvZGg3MDN4anY","path":"/folder1b"}
---
-SaveCopyReferenceArg
-#--copy_reference String A copy reference returned by copy_reference/get.
-#--path String(pattern="/(.|[\r\n])*") Path in the user's Dropbox that is the destination. 
---
-Returns
-SaveCopyReferenceResult
-#--metadata Metadata The metadata of the saved file or folder in the user's Dropbox.
-Metadata for a file or folder. This datatype will be one of the following subtypes:
-file FileMetadata
-folder FolderMetadata
-deleted DeletedMetadata
-*/
-
-function db2_copy_reference_save pAccessToken,pCopyReference,pPath
-   local tHeader,tPost,tUrl
-   put db2_copy_reference_save_HEADER(pAccessToken) into tHeader
-   put db2_copy_reference_save_POST(pCopyReference,pPath) into tPost
-   put db2_copy_reference_save_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_copy_reference_save
-
-/**
-db2_get_temporary_link pAccessToken,pPath
---
-Description
-Get a temporary link to stream content of a file. 
-This link will  expire in four hours and afterwards you will get 410 Gone. 
-Content-Type of the link is determined automatically by the file's mime type.
---
-{"path": "/folder1/testfile1.txt"}
---
-GetTemporaryLinkArg
-path String(pattern="(/(.|[\r\n])*|id:.*)|(rev:[0-9a-f]{9,})|(ns:[0-9]+(/.*)?)") 
-The path to the file you want a temporary link to.
---
-Returns
-GetTemporaryLinkResult
-#--metadata FileMetadata
-#--link String The temporary link which can be used to stream content the file. 
-*/
-
-function db2_get_temporary_link pAccessToken,pPath
-   local tHeader,tPost,tUrl
-   put db2_get_temporary_link_HEADER(pAccessToken) into tHeader
-   put db2_get_temporary_link_POST(pPath) into tPost
-   put db2_get_temporary_link_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_get_temporary_link
-
-/**
-db2_properties_add pAccessToken,pPath,pPropertyGroupsArray
---
-Description
-Add property groups to a Dropbox file.
-See templates/add_for_user  to create new templates. 
---
-use pPropertyGroupsArray to store template_id, and field name, value eg:
-pPropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
-pPropertyGroupsArray[1][fields][1][name]=	Name
-pPropertyGroupsArray[1][fields][1][value]=	me
-pPropertyGroupsArray[1][fields][2][name]=	Age
-pPropertyGroupsArray[1][fields][2][value]=	21
-pPropertyGroupsArray[2][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAXXb
-pPropertyGroupsArray[2][fields][1][name]=	Topic
-pPropertyGroupsArray[2][fields][1][value]=	Science
-pPropertyGroupsArray[2][fields][2][name]=	SubTopic
-pPropertyGroupsArray[2][fields][2][value]=	Biology
---
-for POST
-{"path": "/folder1/testfile1.txt",
-"property_groups": [
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa","fields": [{"name": "name","value": "me"},{"name": "age","value": "21"}]},
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAXXb","fields": [{"name": "Topic","value": "Science"},{"name": "SubTopic","value": "Biology"}]}
-]}
---
-AddPropertiesArg
-#--path String(pattern="/(.|[\r\n])*|id:.*|(ns:[0-9]+(/.*)?)") A unique identifier for the file or folder.
-#--property_groups List of (PropertyGroup) The property groups which are to be added to a Dropbox file.
-PropertyGroup
-A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. 
-The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate.
-#--#--template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
-#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
-PropertyField
-Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup.
-#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
-#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
---
-Returns
-null
-No return values.
-*/
-
-function db2_properties_add pAccessToken,pPath,pPropertyGroupsArray
-   local tHeader,tPost,tUrl
-   put db2_properties_add_HEADER(pAccessToken) into tHeader
-   put db2_properties_add_POST(pPath,pPropertyGroupsArray) into tPost
-   put db2_properties_add_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_properties_add
-
-/**
-db2_properties_overwrite pAccessToken,pPath,pPropertyGroupsArray
---
-Description
-Overwrite property groups associated with a file. 
-This endpoint should be used instead of properties/update when property groups are being updated via a "snapshot" instead of via a "delta". 
-In other words, this endpoint will delete all omitted fields from a property group, whereas properties/update will only delete fields that are explicitly marked for deletion.
-See: https://blogs.dropbox.com/developers/2013/07/how-the-datastore-api-handles-conflicts-part-1-basics-of-offline-conflict-handling/
---
-use pPropertyGroupsArray to store template_id, and field name, value eg:
-pPropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
-pPropertyGroupsArray[1][fields][1][name]=	Name
-pPropertyGroupsArray[1][fields][1][value]=	me
-pPropertyGroupsArray[1][fields][2][name]=	Age
-pPropertyGroupsArray[1][fields][2][value]=	21
-pPropertyGroupsArray[2][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAXXb
-pPropertyGroupsArray[2][fields][1][name]=	Topic
-pPropertyGroupsArray[2][fields][1][value]=	Science
-pPropertyGroupsArray[2][fields][2][name]=	SubTopic
-pPropertyGroupsArray[2][fields][2][value]=	Biology
---
-for POST
-{"path": "/folder1/testfile1.txt",
-"property_groups": [
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa","fields": [{"name": "name","value": "me"},{"name": "age","value": "21"}]},
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAXXb","fields": [{"name": "Topic","value": "Science"},{"name": "SubTopic","value": "Biology"}]}
-] }
---
-OverwritePropertyGroupArg
-#--path String(pattern="/(.|[\r\n])*|id:.*|(ns:[0-9]+(/.*)?)") A unique identifier for the file or folder.
-#--property_groups List of (PropertyGroup, min_items=1) The property groups "snapshot" updates to force apply.
-PropertyGroup
-A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. 
-The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate.
-template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
-#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
-PropertyField
-Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup.
-#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
-#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
---
-Returns
-null
-No return values. 
-*/
-
-function db2_properties_overwrite pAccessToken,pPath,pPropertyGroupsArray
-   local tHeader,tPost,tUrl
-   put db2_properties_overwrite_HEADER(pAccessToken) into tHeader
-   put db2_properties_overwrite_POST(pPath,pPropertyGroupsArray) into tPost
-   put db2_properties_overwrite_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_properties_overwrite
-
-/**
-db2_properties_remove pAccessToken,pPath,pTemplateIDs
---
-Description
-Permanently removes the specified property group from the file. 
-To remove specific property field key value pairs, see properties/update. 
-To update a template, see templates/update_for_user. 
---
-pass pTemplateIDs with ids on separate lines, include "ptid" with id
---
-for POST
-{"path": "/Apps/AppTesterAppFolderUser2/TestFolder/testfile.txt","property_template_ids": ["ptid:562VTx1rtSMAAAAAAAACaA"]}
---
-RemovePropertiesArg
-#--path String(pattern="/(.|[\r\n])*|id:.*|(ns:[0-9]+(/.*)?)") A unique identifier for the file.
-#--property_template_ids List of (String(min_length=1, pattern="(/|ptid:).*"), ) A list of identifiers for a property template created by route properties/template/add. 
---
-Returns
-null
-No return values. 
-*/
-
-function db2_properties_remove pAccessToken,pPath,pTemplateIDs
-   local tHeader,tPost,tUrl
-   put db2_properties_remove_HEADER(pAccessToken) into tHeader
-   put db2_properties_remove_POST(pPath,pTemplateIDs) into tPost
-   put db2_properties_remove_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_properties_remove
-
-/**
-db2_properties_update pAccessToken,pPath,pUpdatePropertyGroupsArray
---
-Description
-Add, update or remove properties associated with the supplied file and templates. 
-This endpoint should be used instead of properties/overwrite when property groups are being updated via a "delta" instead of via a "snapshot" . 
-In other words, this endpoint will not delete any omitted fields from a property group, 
-whereas properties/overwrite will delete any fields that are omitted from a property group. 
---
-use pUpdatePropertyGroupsArray to store template_id, name, value  eg:
-pUpdatePropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
-use pUpdatePropertyGroupsArray to store template_id, name, value  eg:
-pUpdatePropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
-pUpdatePropertyGroupsArray[1][add_or_update_fields][1][name]=	Name
-pUpdatePropertyGroupsArray[1][add_or_update_fields][1][value]=	me
-pUpdatePropertyGroupsArray[1][add_or_update_fields][2][name]=	Age
-pUpdatePropertyGroupsArray[1][add_or_update_fields][2][value]=	21
-pUpdatePropertyGroupsArray[1][remove_fields]=	Gender & cr & Race  cr delimited list of fields to remove
-pUpdatePropertyGroupsArray[2][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAXXb
-pUpdatePropertyGroupsArray[2][add_or_update_fields][1][name]=	Topic
-pUpdatePropertyGroupsArray[2][add_or_update_fields][1][value]=	Science
-pUpdatePropertyGroupsArray[2][remove_fields]=	SubTopic
-
---
-for POST
-{"path": "folder1/testfile2.txt",
-"update_property_groups": [{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa",
-"add_or_update_fields": [{"name": "Security Policy","value": "Confidential"}],
-"remove_fields": []}
-]}
-
-{"path": "/folder1/testfile1.txt",
-"update_property_groups": [
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa",
-"add_or_update_fields": [{"name": "name","value": "me"},{"name": "age","value": "21"}],
-"remove_fields": ["Gender","Race"]},
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAXXb",
-add_or_update_fields": [{"name": "Topic","value": "Science"}],
-"remove_fields": ["SubTopic"]}
-]}
---
-UpdatePropertyGroupArg
-#--path String(pattern="/(.|[\r\n])*|id:.*|(ns:[0-9]+(/.*)?)") A unique identifier for the file. 
-#--update_property_groups List of (PropertyGroupUpdate) Filled custom property templates associated with a file.
-PropertyGroupUpdate
-#--template_id String A unique identifier for a property template.
-#--add_or_update_fields List of (PropertyField)? List of property fields to update if the field already exists. 
-If the field doesn't exist, add the field to the property group. 
-This field is optional.
-PropertyField
-This datatype comes from an imported namespace originally defined in the properties namespace.
-#-- #--name String This is the name or key of a custom property in a property template. File property names can be up to 256 bytes.
-#-- #--value String Value of a custom property attached to a file. Values can be up to 1024 bytes.
-#--remove_fields List of (String)? List of property field names to remove from property group if the field exists. 
-This field is optional.
---Returns
-No return values. 
-*/ 
-
-function db2_properties_update pAccessToken,pPath,pUpdatePropertyGroupsArray
-   local tHeader,tPost,tUrl
-   put db2_properties_update_HEADER(pAccessToken) into tHeader
-   put db2_properties_update_POST(pPath,pUpdatePropertyGroupsArray) into tPost
-   put db2_properties_update_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_properties_update
-
-/**
-db2_properties_search pAccessToken,pQueryText,pQueryMode,pQueryModeField,pLogicalOperator,pFilterTemplateIDs
---
-Description
-Search across property templates for particular property field values.
---
-for POST
-{"queries":[{"query":"gmc","mode":{".tag":"field_name","field_name":"name"}}]}
---
-{"queries":[{"query":"gmc","mode":{".tag":"field_name","field_name":"name"}}],"template_filter":{".tag":"filter_none"}}
---
-{"queries": [{"query": "gmc","mode": {".tag": "field_name", "field_name": "name"},"logical_operator": "or_operator"}],"template_filter": "filter_none"}
---
-{"queries": [{"query": "gmc","mode": {".tag": "field_name", "field_name": "name"},"logical_operator": "or_operator"}],
-"template_filter":{".tag":"filter_some","filter_some":["ptid:562VTx1rtSMAAAAAAAACaA","ptid:562VTx1rtSMAAAAAAAACaX"]}}
---
-{"queries":[{"query":"gmc",
-"mode":{".tag":"field_name","field_name":"name"},
-"logical_operator":{".tag":"or_operator"}},
-{"query":"21",
-"mode":{".tag":"field_name","field_name":"age"},
-"logical_operator":{".tag":"or_operator"}}],
-"template_filter":{".tag":"filter_some","filter_some":["ptid:562VTx1rtSMAAAAAAAACaA","ptid:562VTx1rtSMAAAAAAAACaX"]}}
---
-PropertiesSearchArg
-#--queries List of (PropertiesSearchQuery, min_items=1) Queries to search.
-PropertiesSearchQuery
-#--#--query String The property field value for which to search across templates.
-#--#--mode PropertiesSearchMode The mode with which to perform the search.
-PropertiesSearchMode (open union)
-The value will be one of the following datatypes. New values may be introduced as our API evolves.
-#--#--#--field_name String Search for a value associated with this field name.
-#--#--logical_operator LogicalOperator The logical operator with which to append the query. The default for this union is or_operator.
-LogicalOperator (open union)
-Logical operator to join search queries together. The value will be one of the following datatypes. New values may be introduced as our API evolves.
-#--#--#--#--or_operator Void Append a query with an "or" operator.
-#--template_filter TemplateFilter Filter results to contain only properties associated with these template IDs. The default for this union is filter_none.
-TemplateFilter (union)
-The value will be one of the following datatypes:
-#--#--filter_some List of (String(min_length=1, pattern="(/|ptid:).*"), min_items=1) Only templates with an ID in the supplied list will be returned (a subset of templates will be returned).
-#--#--filter_none Void No templates will be filtered from the result (all templates will be returned).
---
-Returns
-{"matches": [{"id": "id:F5QvTmxtJVAAAAAAAAAAAQ", "path": "/TestFolder/testfile.txt", "is_deleted": false, "property_groups": 
-[{"template_id": "ptid:562VTx1rtSMAAAAAAAACaA", "fields": 
-[{"name": "gender", "value": "M"}, {"name": "age", "value": "21"}, {"name": "name", "value": "gmc"}]}]}]}
---
-PropertiesSearchResult
-#--matches List of (PropertiesSearchMatch) A list (possibly empty) of matches for the query.
-PropertiesSearchMatch
-#--#--id String(min_length=1) The ID for the matched file or folder.
-#--#--path String The path for the matched file or folder.
-#--#--is_deleted Boolean Whether the file or folder is deleted.
-#--#--property_groups List of (PropertyGroup) List of custom property groups associated with the file.
-PropertyGroup
-A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate.
-#--#--#--template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
-#--#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
-PropertyField
-Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup.
-#--#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
-#--#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
-#--cursor String(min_length=1)? Pass the cursor into properties/search/continue to continue to receive search results. Cursor will be null when there are no more results. This field is optional.
-*/
-
-function db2_properties_search pAccessToken,pQueryText,pQueryField,pQueryMode,pLogicalOperator,pFilterTemplateIDs
-   local tHeader,tPost,tUrl
-   put db2_properties_search_HEADER(pAccessToken) into tHeader
-   put db2_properties_search_POST(pQueryText,pQueryField,pQueryMode,pLogicalOperator,pFilterTemplateIDs) into tPost
-   put db2_properties_search_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_properties_search
-
---------------------------------------------
-
-/**
-db2_templates_add_for_user pAccessToken,pTemplateName,pTemplateDescription,pFieldsArray
---
-Description
-Add a specified template.
-Apps must have full Dropbox access to use this endpoint.
---
-pFieldsArray would be an array containing the field names and descriptions and types (string)
-pFieldsArray[1]["name"]...[2]["name"] etc
-pFieldsArray[1][name]=	Name
-pFieldsArray[1][description]=	Enter name
-pFieldsArray[1][type]=	string
-pFieldsArray[2][name]=	Age
-pFieldsArray[2][description]=	Enter age
-pFieldsArray[2][type]=	string
---
-For POST
-{"name": "UserInfo","description": "UserInfo template.",
-"fields": [{"name": "name","description": "Enter name.","type": "string"},
-{"name": "age","description": "Enter age.","type": "string"},
-{"name": "gender","description": "Enter gender.","type": "string"}]}
---
-AddTemplateArg
-#--name String Display name for the template. Template names can be up to 256 bytes.
-#--description String Description for the template. Template descriptions can be up to 1024 bytes.
-#--fields List of (PropertyFieldTemplate) Definitions of the property fields associated with this template. There can be up to 32 properties in a single template.
-PropertyFieldTemplate
-Defines how a single property field may be structured. Used exclusively by PropertyGroupTemplate.
-#--#--name String Key of the property field being described. Property field keys can be up to 256 bytes.
-#--#--description String Description of the property field. Property field descriptions can be up to 1024 bytes.
-#--#--type PropertyType Data type of the value of this property field. This type will be enforced upon property creation and modifications.
-PropertyType (open union)
-Data type of the given property field added. The value will be one of the following datatypes. New values may be introduced as our API evolves.
-#--#--#--string Void The associated property field will be of type string. Unicode is supported.
---
-*Returns
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa"}
-AddTemplateResult
-#--template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for template added by templates/add_for_user
-*/
-
-function db2_templates_add_for_user pAccessToken,pTemplateName,pTemplateDescription,pFieldsArray
-   local tHeader,tPost,tUrl
-   put db2_templates_add_for_user_HEADER(pAccessToken) into tHeader
-   put db2_templates_add_for_user_POST(pTemplateName,pTemplateDescription,pFieldsArray) into tPost
-   put db2_templates_add_for_user_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_templates_add_for_user
-
-/**
-db2_templates_get_for_user pAccessToken,pTemplateID
---
-Description
-Get the schema for a specified template.
-Apps must have full Dropbox access to use this endpoint.
---
-GetTemplateArg
-#--template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for template added by templates/add_for_user 
---
-For POST
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa"}
---
-Returns
-GetTemplateResult
-#--name String Display name for the template. Template names can be up to 256 bytes.
-#--description String Description for the template. Template descriptions can be up to 1024 bytes.
-#--fields List of (PropertyFieldTemplate) Definitions of the property fields associated with this template. There can be up to 32 properties in a single template.
-PropertyFieldTemplate
-Defines how a single property field may be structured. Used exclusively by PropertyGroupTemplate.
-#--#--name String Key of the property field being described. Property field keys can be up to 256 bytes.
-#--#--description String Description of the property field. Property field descriptions can be up to 1024 bytes.
-#--#--type PropertyType Data type of the value of this property field. This type will be enforced upon property creation and modifications.
-*/
-
-function db2_templates_get_for_user pAccessToken,pTemplateID
-   local tHeader,tPost,tUrl
-   put db2_templates_get_for_user_HEADER(pAccessToken) into tHeader
-   put db2_templates_get_for_user_POST(pTemplateID) into tPost
-   put db2_templates_get_for_user_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_templates_get_for_user
-
-/**
-db2_templates_list_for_user pAccessToken
---
-Description
-Get the property template identifiers for a user.
-Apps must have full Dropbox access to use this endpoint.
---
-Returns
-{"template_ids": ["ptid:1a5n2i6d3OYEAAAAAAAAAYa","ptid:1a5n2i6d3OYEAAAAAAAAXXB"]}
-ListTemplateResult
-#--template_ids List of (String(min_length=1, pattern="(/|ptid:).*")) List of identifiers for templates added by templates/add_for_user
-*/
-
-function db2_templates_list_for_user pAccessToken
-   local tHeader,tPost,tUrl
-   put db2_templates_list_for_user_HEADER(pAccessToken) into tHeader
-   put db2_templates_list_for_user_POST() into tPost
-   put db2_templates_list_for_user_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_templates_list_for_user
-
-/**
-db2_templates_remove_for_user pAccessToken,pTemplateID
---
-Description
-Permanently removes the specified template created from templates/add_for_user. 
-All properties associated with the template will also be removed. This action cannot be undone.
-Apps must have full Dropbox access to use this endpoint.
---
-pTemplateID is one id only; can't delete multiple ids in one call.
---
-for POST
-{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa"}
---
-RemoveTemplateArg
-template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for a template added by templates/add_for_user 
---
-Returns
-null. No return values. 
-*/
-
-function db2_templates_remove_for_user pAccessToken,pTemplateID
-   local tHeader,tPost,tUrl
-   put db2_templates_list_for_user_HEADER(pAccessToken) into tHeader
-   put db2_templates_list_for_user_POST(pTemplateID) into tPost
-   put db2_templates_list_for_user_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_templates_remove_for_user
-
-/**
-db2_templates_update_for_user pAccessToken,pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray
---
-Description
-Update a template associated with a user. 
-This route can update  the template name, the template description and add optional properties  to templates.
-Apps must have full Dropbox access to use this endpoint.
---
-pFieldsArray would be an array containing the field names and descriptions and types (string)
-pFieldsArray[1][name]=	Me
-pFieldsArray[1][description]=	Full name
-pFieldsArray[1][type]=	string
---
-Since the last 3 params are optional pass those not being updated as empty "" so any one of them can be updated
-If a field name is passed that is already present it will not overwrite the field --just ignored.
---
-for POST
-{"template_id": "ptid:562VTx1rtSMAAAAAAAACYg", "name": "UserInfo","description": "UserInfo template.",
-"add_fields": [{"name": "name","description": "Enter name.","type": "string"},
-{"name": "age","description": "Enter age.","type": "string"},
-{"name": "gender","description": "Enter gender.","type": "string"}]}
---
-UpdateTemplateArg
-#--template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for template added by templates/add_for_user
-#--name String? A display name for the template. template names can be up to 256 bytes. This field is optional.
-#--description String? Description for the new template. Template descriptions can be up to 1024 bytes. This field is optional.
-#--add_fields List of (PropertyFieldTemplate)? Property field templates to be added to the group template. There can be up to 32 properties in a single template. This field is optional.
---
-Returns
-{"template_id": ["ptid:562VTx1rtSMAAAAAAAACYg"]}
-UpdateTemplateResult
-#--template_id String(min_length=1, pattern="(/|ptid:).*") An identifier for template added by route templates/add_for_user
-*/
-
-function db2_templates_update_for_user pAccessToken,pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray
-   local tHeader,tPost,tUrl
-   put db2_templates_list_for_user_HEADER(pAccessToken) into tHeader
-   put db2_templates_list_for_user_POST(pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray) into tPost
-   put db2_templates_list_for_user_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_templates_update_for_user
-
-----------------------------------
-
-/**
-db2_properties_search_continue pAccessToken,pSearchCursor
---
-Description
-Once a cursor has been retrieved from properties/search, use this to paginate through all search results. 
---
-for POST
-{"cursor": "ZtkX9_EHj3x7PMkVuFIhwKYXEpwpLwyxp9vMKomUhllil9q7eWiAu"}
---
-PropertiesSearchContinueArg
-#--cursor String(min_length=1) The cursor returned by your last call to properties/search or properties/search/continue.
---
-Returns
-{"matches": [{"id": "id:F5QvTmxtJVAAAAAAAAAAAQ", "path": "/TestFolder/testfile.txt", "is_deleted": false, "property_groups": 
-[{"template_id": "ptid:562VTx1rtSMAAAAAAAACaA", "fields": 
-[{"name": "gender", "value": "M"}, {"name": "age", "value": "21"}, {"name": "name", "value": "gmc"}]}]}]}
---
-PropertiesSearchResult
-#--matches List of (PropertiesSearchMatch) A list (possibly empty) of matches for the query.
-PropertiesSearchMatch
-#--#--id String(min_length=1) The ID for the matched file or folder.
-#--#--path String The path for the matched file or folder.
-#--#--is_deleted Boolean Whether the file or folder is deleted.
-#--#--property_groups List of (PropertyGroup) List of custom property groups associated with the file.
-PropertyGroup
-A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate.
-#--#--#--template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
-#--#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
-PropertyField
-Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup.
-#--#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
-#--#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
-#--cursor String(min_length=1)? Pass the cursor into properties/search/continue to continue to receive search results. Cursor will be null when there are no more results. This field is optional.
-*/
-
-function db2_properties_search_continue pAccessToken,pSearchCursor
-   local tHeader,tPost,tUrl
-   put db2_properties_search_continue_HEADER(pAccessToken) into tHeader
-   put db2_properties_search_continue_POST(pSearchCursor) into tPost
-   put db2_properties_search_continue_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_properties_search_continue
-
-/**
-db2_save_url pAccessToken,pPath,pUrlToSave
---
-Description
-Save a specified URL into a file in user's Dropbox. 
-If the given path already exists, the file will be renamed to avoid the conflict (e.g. myfile (1).txt).    
---
-for POST
-{"path": "/folder3/testfile2.txt","url": "https://wordpress.org/plugins/about/readme.txt"}
-{"path": "/folder3/testfile3.xlsx","url": "http://www.exinfm.com/excel files/What-If Analysis Template.xls"}
---
-SaveUrlArg
-#--path String(pattern="/(.|[\r\n])*") 
-The path in Dropbox where the URL will be saved to. 
-#--url String 
-The URL to be saved.
---
-Returns
-SaveUrlResult (union)
-The value will be one of the following datatypes:
-async_job_id String(min_length=1) This response indicates that the processing is asynchronous. The string is an id that can be used to obtain the status of the asynchronous job.
-complete FileMetadata Metadata of the file where the URL is saved to.
-*/
-
-function db2_save_url pAccessToken,pPath,pUrlToSave
- local tHeader,tPost,tUrl
-   put db2_save_url_HEADER(pAccessToken) into tHeader
-   put db2_save_url_POST(pPath,pUrlToSave) into tPost
-   put db2_save_url_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_save_url
-
-/**
-db2_save_url_check_job_status pAccessToken,pAsyncJobId
---
-Description
-Check the status of a save_url job. 
---
-for POST
-{"async_job_id":"562VTx1rtSMAAAAAAAACjw"}
---
-PollArg
-Arguments for methods that poll the status of an asynchronous job. 
-This datatype comes from an imported namespace originally defined in the async namespace.
-#--async_job_id String(min_length=1) 
-Id of the asynchronous job. This is the value of a response returned from the method that launched the job.
---
-Returns
-*/
-
-function db2_save_url_check_job_status pAccessToken,pAsyncJobId
-   local tHeader,tPost,tUrl
-   put db2_save_url_check_job_status_HEADER(pAccessToken) into tHeader
-   put db2_save_url_check_job_status_POST(pAsyncJobId) into tPost
-   put db2_save_url_check_job_status_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_save_url_check_job_status
-
-/**
-db2_upload_session_append_v2 pAccessToken,pSessionID,pOffset,pClose,pData
---
-Description
-Append more data to an upload session.
-When the parameter close is set, this call will close the session.
-A single request should not upload more than 150 MB.
---
-for header
-Dropbox-API-Arg: {"cursor": {"session_id": "AAAAAAAAApUz1Z-pUXNJqw","offset": 69},"close": false}
---
-UploadSessionAppendArg
-#--cursor UploadSessionCursor Contains the upload session ID and the offset.
-UploadSessionCursor
-#--session_id String The upload session ID (returned by upload_session/start).
-#--offset UInt64 The amount of data that has been uploaded so far. We use this to make sure upload data isn't lost or duplicated in the event of a network error.
-#--close Boolean If true, the current session will be closed, at which point you won't be able to call upload_session/append_v2 anymore with the current session. 
-The default for this field is False.
---
-Returns
-No return values. 
-*/
-
-function db2_upload_session_append_v2 pAccessToken,pSessionID,pOffset,pClose,pData
-   local tHeader,tPost,tUrl
-   put db2_upload_session_append_v2_HEADER(pAccessToken,pSessionID,pOffset,pClose) into tHeader
-   put db2_upload_session_append_v2_POST(pData) into tPost
-   put db2_upload_session_append_v2_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_upload_session_append_v2
-
---------------------------------------------------------------------------------------
-
-/**
-db2_copy_v2 pAccessToken,pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
---
-Description
-Copy a file or folder to a different location in the user's Dropbox.
-If the source path is a folder all its contents will be copied.
---
-for POST
-{"from_path":"/folder1","to_path":"/folder1d"}
-{"from_path":"/folder1/testfile1.txt","to_path":"/folder1/testfile3.txt"}
-{"from_path":"/folder1","to_path":"/folder1d","allow_shared_folder":false,"autorename":false,"allow_ownership_transfer":false}
---
-RelocationArg
-#--from_path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") Path in the user's Dropbox to be copied or moved.
-#--to_path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") Path in the user's Dropbox that is the destination.
-#--allow_shared_folder Boolean If true, copy will copy contents in shared folder, otherwise RelocationError.cant_copy_shared_folder will be returned if from_path contains shared folder. This field is always true for move. The default for this field is False.
-#--autorename Boolean If there's a conflict, have the Dropbox server try to autorename the file to avoid the conflict. The default for this field is False.
-#--allow_ownership_transfer Boolean Allow moves by owner even if it would result in an ownership transfer for the content being moved. This does not apply to copies. The default for this field is False.
---
-Returns
-Metadata (datatype with subtypes)
-Metadata for a file or folder. This datatype will be one of the following subtypes:
-file FileMetadata
-folder FolderMetadata
-deleted DeletedMetadata
-*/
-
-function db2_copy_v2 pAccessToken,pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
-   local tHeader,tPost,tUrl
-   put db2_copy_v2_HEADER(pAccessToken) into tHeader
-   put db2_copy_v2_POST(pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer) into tPost
-   put db2_copy_v2_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_copy_v2
-
-/**
 db2_copy_batch pAccessToken,pPathFromAndToArray,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
 --
 Description
@@ -1665,6 +1350,108 @@ function db2_copy_batch_check pAccessToken,pAsyncJobId
 end db2_copy_batch_check
 
 /**
+db2_copy_reference_get pAccessToken,pPath
+--
+Description
+Get a copy reference to a file or folder. 
+This reference string can be used to save that file or folder to another user's Dropbox by passing it to copy_reference/save. 
+--
+GetCopyReferenceArg
+path String(pattern="(/(.|[\r\n])*|id:.*)|(rev:[0-9a-f]{9,})|(ns:[0-9]+(/.*)?)") 
+The path to the file or folder you want to get a copy reference to.
+--
+for POST
+{"path": "/folder1"}
+{"path": "/folder1/testfile2.txt"}
+--
+Returns
+GetCopyReferenceResult
+metadata Metadata 
+Metadata for a file or folder. This datatype will be one of the following subtypes:
+file FileMetadata
+folder FolderMetadata
+deleted DeletedMetadata
+copy_reference String A copy reference to the file or folder.
+expires Timestamp(format="%Y-%m-%dT%H:%M:%SZ") The expiration date of the copy reference. 
+This value is currently set to be far enough in the future so that expiration is effectively not an issue. 
+*/
+
+function db2_copy_reference_get pAccessToken,pPath
+   local tHeader,tPost,tUrl
+   put db2_copy_reference_get_HEADER(pAccessToken) into tHeader
+   put db2_copy_reference_get_POST(pPath) into tPost
+   put db2_copy_reference_get_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_copy_reference_get
+
+/**
+db2_copy_reference_save pAccessToken,pCopyReference,pPath
+--
+Description
+Save a copy reference returned by copy_reference/get to the user's Dropbox. 
+--
+for POST
+{"copy_reference":"AAAAAErJ_Yk5YWJlbmtweWVrZm0","path":"/folder1/testfile1a.txt"}
+{"copy_reference":"AAAAAErJ_Yk3ampvZGg3MDN4anY","path":"/folder1b"}
+--
+SaveCopyReferenceArg
+#--copy_reference String A copy reference returned by copy_reference/get.
+#--path String(pattern="/(.|[\r\n])*") Path in the user's Dropbox that is the destination. 
+--
+Returns
+SaveCopyReferenceResult
+#--metadata Metadata The metadata of the saved file or folder in the user's Dropbox.
+Metadata for a file or folder. This datatype will be one of the following subtypes:
+file FileMetadata
+folder FolderMetadata
+deleted DeletedMetadata
+*/
+
+function db2_copy_reference_save pAccessToken,pCopyReference,pPath
+   local tHeader,tPost,tUrl
+   put db2_copy_reference_save_HEADER(pAccessToken) into tHeader
+   put db2_copy_reference_save_POST(pCopyReference,pPath) into tPost
+   put db2_copy_reference_save_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_copy_reference_save
+
+
+/**
+db2_copy_v2 pAccessToken,pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
+--
+Description
+Copy a file or folder to a different location in the user's Dropbox.
+If the source path is a folder all its contents will be copied.
+--
+for POST
+{"from_path":"/folder1","to_path":"/folder1d"}
+{"from_path":"/folder1/testfile1.txt","to_path":"/folder1/testfile3.txt"}
+{"from_path":"/folder1","to_path":"/folder1d","allow_shared_folder":false,"autorename":false,"allow_ownership_transfer":false}
+--
+RelocationArg
+#--from_path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") Path in the user's Dropbox to be copied or moved.
+#--to_path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") Path in the user's Dropbox that is the destination.
+#--allow_shared_folder Boolean If true, copy will copy contents in shared folder, otherwise RelocationError.cant_copy_shared_folder will be returned if from_path contains shared folder. This field is always true for move. The default for this field is False.
+#--autorename Boolean If there's a conflict, have the Dropbox server try to autorename the file to avoid the conflict. The default for this field is False.
+#--allow_ownership_transfer Boolean Allow moves by owner even if it would result in an ownership transfer for the content being moved. This does not apply to copies. The default for this field is False.
+--
+Returns
+Metadata (datatype with subtypes)
+Metadata for a file or folder. This datatype will be one of the following subtypes:
+file FileMetadata
+folder FolderMetadata
+deleted DeletedMetadata
+*/
+
+function db2_copy_v2 pAccessToken,pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
+   local tHeader,tPost,tUrl
+   put db2_copy_v2_HEADER(pAccessToken) into tHeader
+   put db2_copy_v2_POST(pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer) into tPost
+   put db2_copy_v2_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_copy_v2
+
+/**
 db2_create_folder_v2 pAccessToken,pPath
 --
 Description
@@ -1692,40 +1479,6 @@ function db2_create_folder_v2 pAccessToken,pPath,pAutorename
    put db2_create_folder_v2_URL() into tUrl
    return db2_API2(tHeader,tPost,tUrl)
 end db2_create_folder_v2
-
-/**
-db2_delete_v2 pAccessToken,pPath
---
-Description
-Delete the file or folder at a given path.
-If the path is a folder, all its contents will be deleted too.
-A successful response indicates that the file or folder was deleted. 
-The returned metadata will be the corresponding FileMetadata or FolderMetadata for the item at time of deletion, 
-and not a DeletedMetadata object. 
---
-for POST
-{"path": "/folder1"}
---
-DeleteArg
-path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") Path in the user's Dropbox to delete.
---
-Returns
-DeleteResult
-metadata Metadata Metadata of the deleted object.
-Metadata (datatype with subtypes)
-Metadata for a file or folder. This datatype will be one of the following subtypes:
-file FileMetadata
-folder FolderMetadata
-deleted DeletedMetadata
-*/
-
-function db2_delete_v2 pAccessToken,pPath
-   local tHeader,tPost,tUrl
-   put db2_delete_v2_HEADER(pAccessToken) into tHeader
-   put db2_delete_v2_POST(pPath) into tPost
-   put db2_delete_v2_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_delete_v2
 
 /**
 db2_delete_batch pAccessToken,pPaths
@@ -1792,6 +1545,40 @@ function db2_delete_batch_check pAccessToken,pAsyncJobId
 end db2_delete_batch_check
 
 /**
+db2_delete_v2 pAccessToken,pPath
+--
+Description
+Delete the file or folder at a given path.
+If the path is a folder, all its contents will be deleted too.
+A successful response indicates that the file or folder was deleted. 
+The returned metadata will be the corresponding FileMetadata or FolderMetadata for the item at time of deletion, 
+and not a DeletedMetadata object. 
+--
+for POST
+{"path": "/folder1"}
+--
+DeleteArg
+path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") Path in the user's Dropbox to delete.
+--
+Returns
+DeleteResult
+metadata Metadata Metadata of the deleted object.
+Metadata (datatype with subtypes)
+Metadata for a file or folder. This datatype will be one of the following subtypes:
+file FileMetadata
+folder FolderMetadata
+deleted DeletedMetadata
+*/
+
+function db2_delete_v2 pAccessToken,pPath
+   local tHeader,tPost,tUrl
+   put db2_delete_v2_HEADER(pAccessToken) into tHeader
+   put db2_delete_v2_POST(pPath) into tPost
+   put db2_delete_v2_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_delete_v2
+
+/**
 db2_download pAccessToken,pPath
 --
 Description
@@ -1848,31 +1635,35 @@ function db2_download_zip pAccessToken,pPath
 end db2_download_zip
 
 /**
-db2_get_metadata pAccessToken,pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers
+db2_get_metadata pAccessToken,pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,pIncludePropertyTemplateIDs
 --
 Description
 Returns the metadata for a file or folder.
 Note: Metadata for the root folder is unsupported.
 --
+pIncludePropertyTemplateIDs needs to be a list of templates one per line; e.g. ptid:562VTx1rtSMAAAAAAAACYg
+--
 for POST
 {"path":"/folder1/testfile1.txt"}
-{"path":"/folder1/testfile1.txt","include_media_info":false,"include_deleted": false,"include_has_explicit_shared_members": false}
+{"path": "/folder1/testfile1.txt","include_media_info": false,"include_deleted": false,"include_has_explicit_shared_members": false}
+{"path":"/Apps/AppTesterAppFolderUser2/TestFolder/testfile.txt","include_media_info": false,"include_deleted": true,"include_has_explicit_shared_members": true,
+"include_property_groups":{".tag":"filter_some","filter_some":["ptid:562VTx1rtSMAAAAAAAACYg"]}}
 --
 GetMetadataArg
-#--path String(pattern="(/(.|[\r\n])*|id:.*)|(rev:[0-9a-f]{9,})|(ns:[0-9]+(/.*)?)") The path of a file or folder on Dropbox.
-#--include_media_info Boolean
+#--path String(pattern="(/(.|[\r\n])*|id:.*)|(rev:[0-9a-f]{9,})|(ns:[0-9]+(/.*)?)") 
+The path of a file or folder on Dropbox.
+#--include_media_info Boolean 
 If true, FileMetadata.media_info is set for photo and video. The default for this field is False.
 #--include_deleted Boolean 
 If true, DeletedMetadata will be returned for deleted file or folder, otherwise LookupError.not_found will be returned. The default for this field is False.
 #--include_has_explicit_shared_members Boolean 
 If true, the results will include a flag for each file indicating whether or not that file has any explicit members. The default for this field is False.
 #--include_property_groups TemplateFilterBase? 
-If set to a valid list of template IDs, FileMetadata.property_groups is set if there exists property data associated with the file
-and each of the listed templates. This field is optional.
+If set to a valid list of template IDs, FileMetadata.property_groups is set if there exists property data associated with the file and each of the listed templates. This field is optional.
 TemplateFilterBase (open union)
 This datatype comes from an imported namespace originally defined in the file_properties namespace. 
 The value will be one of the following datatypes. New values may be introduced as our API evolves.
-#--filter_some List of (String(min_length=1, pattern="(/|ptid:).*"), min_items=1) 
+#--#--filter_some List of (String(min_length=1, pattern="(/|ptid:).*"), min_items=1) 
 Only templates with an ID in the supplied list will be returned (a subset of templates will be returned).
 --
 Returns
@@ -1883,10 +1674,10 @@ folder FolderMetadata
 deleted DeletedMetadata
 */
 
-function db2_get_metadata pAccessToken,pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers
+function db2_get_metadata pAccessToken,pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,pIncludePropertyTemplateIDs
    local tHeader,tPost,tUrl
    put db2_get_metadata_HEADER(pAccessToken) into tHeader
-   put db2_get_metadata_POST(pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers) into tPost
+   put db2_get_metadata_POST(pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,pIncludePropertyTemplateIDs) into tPost
    put db2_get_metadata_URL() into tUrl
    return db2_API2(tHeader,tPost,tUrl)
 end db2_get_metadata
@@ -1921,6 +1712,34 @@ function db2_get_preview pAccessToken,pPath
    put db2_get_preview_URL() into tUrl
    return db2_API2(tHeader,tPost,tUrl)
 end db2_get_preview
+
+/**
+db2_get_temporary_link pAccessToken,pPath
+--
+Description
+Get a temporary link to stream content of a file. 
+This link will  expire in four hours and afterwards you will get 410 Gone. 
+Content-Type of the link is determined automatically by the file's mime type.
+--
+{"path": "/folder1/testfile1.txt"}
+--
+GetTemporaryLinkArg
+path String(pattern="(/(.|[\r\n])*|id:.*)|(rev:[0-9a-f]{9,})|(ns:[0-9]+(/.*)?)") 
+The path to the file you want a temporary link to.
+--
+Returns
+GetTemporaryLinkResult
+#--metadata FileMetadata
+#--link String The temporary link which can be used to stream content the file. 
+*/
+
+function db2_get_temporary_link pAccessToken,pPath
+   local tHeader,tPost,tUrl
+   put db2_get_temporary_link_HEADER(pAccessToken) into tHeader
+   put db2_get_temporary_link_POST(pPath) into tPost
+   put db2_get_temporary_link_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_get_temporary_link
 
 /**
 db2_get_thumbnail pAccessToken,pPath,pFormat,pSize
@@ -2250,46 +2069,6 @@ function db2_list_revisions pAccessToken,pPath,pMode,pLimit
 end db2_list_revisions
 
 /**
-db2_move_v2 pAccessToken,pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
---
-Description
-Move a file or folder to a different location in the user's Dropbox.
-If the source path is a folder all its contents will be moved.
---
-for POST
-{"from_path":"/folder1/testfile1.txt","to_path":"/folder2/testfile11.txt"}
-{"from_path":"/folder1","to_path":"/folder1d","allow_shared_folder":false,"autorename":false,"allow_ownership_transfer":false}
---
-RelocationArg
-#--from_path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") 
-Path in the user's Dropbox to be copied or moved.
-#--to_path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") 
-Path in the user's Dropbox that is the destination.
-#--allow_shared_folder Boolean 
-If true, copy will copy contents in shared folder, otherwise RelocationError.cant_copy_shared_folder will be returned if from_path contains shared folder. 
-This field is always true for move. The default for this field is False.
-#--autorename Boolean
-If there's a conflict, have the Dropbox server try to autorename the file to avoid the conflict. The default for this field is False.
-#--allow_ownership_transfer Boolean 
-Allow moves by owner even if it would result in an ownership transfer for the content being moved. This does not apply to copies. The default for this field is False.
---
-Returns
-Metadata (datatype with subtypes)
-Metadata for a file or folder. This datatype will be one of the following subtypes:
-file FileMetadata
-folder FolderMetadata
-deleted DeletedMetadata
-*/
-
-function db2_move_v2 pAccessToken,pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
-   local tHeader,tPost,tUrl
-   put db2_move_v2_HEADER(pAccessToken) into tHeader
-   put db2_move_v2_POST(pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer) into tPost
-   put db2_move_v2_URL() into tUrl
-   return db2_API2(tHeader,tPost,tUrl)
-end db2_move_v2
-
-/**
 db2_move_batch pAccessToken,pPathFromAndToArray,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer--
 Description
 Move multiple files or folders to different locations at once in the user's Dropbox.
@@ -2365,6 +2144,47 @@ function db2_move_batch_check pAccessToken,pAsyncJobId
    return db2_API2(tHeader,tPost,tUrl)
 end db2_move_batch_check
 
+
+/**
+db2_move_v2 pAccessToken,pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
+--
+Description
+Move a file or folder to a different location in the user's Dropbox.
+If the source path is a folder all its contents will be moved.
+--
+for POST
+{"from_path":"/folder1/testfile1.txt","to_path":"/folder2/testfile11.txt"}
+{"from_path":"/folder1","to_path":"/folder1d","allow_shared_folder":false,"autorename":false,"allow_ownership_transfer":false}
+--
+RelocationArg
+#--from_path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") 
+Path in the user's Dropbox to be copied or moved.
+#--to_path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") 
+Path in the user's Dropbox that is the destination.
+#--allow_shared_folder Boolean 
+If true, copy will copy contents in shared folder, otherwise RelocationError.cant_copy_shared_folder will be returned if from_path contains shared folder. 
+This field is always true for move. The default for this field is False.
+#--autorename Boolean
+If there's a conflict, have the Dropbox server try to autorename the file to avoid the conflict. The default for this field is False.
+#--allow_ownership_transfer Boolean 
+Allow moves by owner even if it would result in an ownership transfer for the content being moved. This does not apply to copies. The default for this field is False.
+--
+Returns
+Metadata (datatype with subtypes)
+Metadata for a file or folder. This datatype will be one of the following subtypes:
+file FileMetadata
+folder FolderMetadata
+deleted DeletedMetadata
+*/
+
+function db2_move_v2 pAccessToken,pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
+   local tHeader,tPost,tUrl
+   put db2_move_v2_HEADER(pAccessToken) into tHeader
+   put db2_move_v2_POST(pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer) into tPost
+   put db2_move_v2_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_move_v2
+
 /**
 db2_permanently_delete pAccessToken,pPath
 --
@@ -2418,6 +2238,64 @@ function db2_restore pAccessToken,pPath,pRevision
 end db2_restore
 
 /**
+db2_save_url pAccessToken,pPath,pUrlToSave
+--
+Description
+Save a specified URL into a file in user's Dropbox. 
+If the given path already exists, the file will be renamed to avoid the conflict (e.g. myfile (1).txt).    
+--
+for POST
+{"path": "/folder3/testfile2.txt","url": "https://wordpress.org/plugins/about/readme.txt"}
+{"path": "/folder3/testfile3.xlsx","url": "http://www.exinfm.com/excel files/What-If Analysis Template.xls"}
+--
+SaveUrlArg
+#--path String(pattern="/(.|[\r\n])*") 
+The path in Dropbox where the URL will be saved to. 
+#--url String 
+The URL to be saved.
+--
+Returns
+SaveUrlResult (union)
+The value will be one of the following datatypes:
+async_job_id String(min_length=1) This response indicates that the processing is asynchronous. The string is an id that can be used to obtain the status of the asynchronous job.
+complete FileMetadata Metadata of the file where the URL is saved to.
+*/
+
+function db2_save_url pAccessToken,pPath,pUrlToSave
+ local tHeader,tPost,tUrl
+   put db2_save_url_HEADER(pAccessToken) into tHeader
+   put db2_save_url_POST(pPath,pUrlToSave) into tPost
+   put db2_save_url_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_save_url
+
+/**
+db2_save_url_check_job_status pAccessToken,pAsyncJobId
+--
+Description
+Check the status of a save_url job. 
+--
+for POST
+{"async_job_id":"562VTx1rtSMAAAAAAAACjw"}
+--
+PollArg
+Arguments for methods that poll the status of an asynchronous job. 
+This datatype comes from an imported namespace originally defined in the async namespace.
+#--async_job_id String(min_length=1) 
+Id of the asynchronous job. This is the value of a response returned from the method that launched the job.
+--
+Returns
+*/
+
+function db2_save_url_check_job_status pAccessToken,pAsyncJobId
+   local tHeader,tPost,tUrl
+   put db2_save_url_check_job_status_HEADER(pAccessToken) into tHeader
+   put db2_save_url_check_job_status_POST(pAsyncJobId) into tPost
+   put db2_save_url_check_job_status_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_save_url_check_job_status
+
+/**
 db2_search pAccessToken,pPath,pQuery,pStart,pMaxResults,pMode
 Description
 Searches for files and folders.
@@ -2468,35 +2346,106 @@ function db2_search pAccessToken,pPath,pQuery,pStart,pMaxResults,pMode
    return db2_API2(tHeader,tPost,tUrl)
 end db2_search
 
-function db2_upload pAccessToken,pPath,pMode,pAutorename,pMute,pData
-   /*
-   CommitInfo
-   #--path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)") Path in the user's Dropbox to save the file. 
-   #--mode WriteMode Selects what to do if the file already exists. 
-   The default for this union is add.
-   WriteMode (union)
-   Your intent when writing a file to some path. This is used to determine what constitutes a conflict and what the autorename strategy is.
-   In some situations, the conflict behavior is identical: (a) If the target path doesn't contain anything, the file is always written; no conflict. (b) If the target path contains a folder, it's always a conflict. (c) If the target path contains a file with identical contents, nothing gets written; no conflict.
-   The conflict checking differs in the case where there's a file at the target path with contents different from the contents you're trying to write. The value will be one of the following datatypes:
-   #--#--add Void Never overwrite the existing file. The autorename strategy is to append a number to the file name. For example, "document.txt" might become "document (2).txt".
-   #--#--overwrite Void Always overwrite the existing file. The autorename strategy is the same as it is for add.
-   #--#--update String Overwrite if the given "rev" matches the existing file's "rev". The autorename strategy is to append the string "conflicted copy" to the file name. For example, "document.txt" might become "document (conflicted copy).txt" or "document (Panda's conflicted copy).txt".
-   #--autorename Boolean If there's a conflict, as determined by mode, have the Dropbox server try to autorename the file to avoid conflict.
-   The default for this field is False.
-   #--client_modified Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? The value to store as the client_modified timestamp. Dropbox automatically records the time at which the file was written to the Dropbox servers. It can also record an additional timestamp, provided by Dropbox desktop clients, mobile clients, and API apps of when the file was actually created or modified. 
-   This field is optional.
-   mute Boolean Normally, users are made aware of any file modifications in their Dropbox account via notifications in the client software. If true, this tells the clients that this modification shouldn't result in a user notification.
-   The default for this field is False.
-   */
+/**
+db2_upload pAccessToken,pPath,pData,pMode,pAutorename,pClientModified,pMute,pPropertyGroupsArray
+--
+Description
+Create a new file with the contents provided in the request.
+Do not use this to upload a file larger than 150 MB. Instead, create an upload session with upload_session/start. 
+--
+if mode is update also need string for the rev value for the file    "mode": {".tag": "update", "update": "a1c10ce0dd78" }
+pass Mode as 2 line string if update eg: update & cr & a1c10ce0dd78
+--
+pPropertyGroupsArray[1][template_id]=	ptid:1a5n2i6d3OYEAAAAAAAAAYa
+pPropertyGroupsArray[1][fields][1][name]=	Name
+pPropertyGroupsArray[1][fields][1][value]=	me
+--
+for header
+Dropbox-API-Arg: {"path":"/folder3/testfile1.txt","mode":"overwrite","autorename":false,"mute":true}
+Dropbox-API-Arg: {"path":"/folder3/testfile1.txt","mode":"overwrite","autorename":false, \
+      "client_modified": "2017-12-24T20:58:03Z","mute":false,"property_groups": [{"template_id": "ptid:562VTx1rtSMAAAAAAAACaA", \
+      "fields": [{"name": "name","value": "gmc"},{"name": "age","value": "21"},{"name": "gender","value": "M"}]}]}
+--
+CommitInfo
+#--path String(pattern="(/(.|[\r\n])*)|(ns:[0-9]+(/.*)?)|(id:.*)") 
+Path in the user's Dropbox to save the file.
+#--mode WriteMode 
+Selects what to do if the file already exists. The default for this union is add.
+WriteMode (union)
+Your intent when writing a file to some path. This is used to determine what constitutes a conflict and what the autorename strategy is.
+In some situations, the conflict behavior is identical: (a) If the target path doesn't refer to anything, the file is always written; no conflict. 
+(b) If the target path refers to a folder, it's always a conflict. (c) If the target path refers to a file with identical contents, nothing gets written; no conflict.
+The conflict checking differs in the case where there's a file at the target path with contents different from the contents you're trying to write. 
+The value will be one of the following datatypes:
+#--#--add Void Do not overwrite an existing file if there is a conflict. The autorename strategy is to append a number to the file name. 
+For example, "document.txt" might become "document (2).txt".
+#--#--overwrite Void Always overwrite the existing file. The autorename strategy is the same as it is for add.
+#--#--update String(min_length=9, pattern="[0-9a-f]+") Overwrite if the given "rev" matches the existing file's "rev". 
+The autorename strategy is to append the string "conflicted copy" to the file name. 
+For example, "document.txt" might become "document (conflicted copy).txt" or "document (Panda's conflicted copy).txt".
+#--autorename Boolean If there's a conflict, as determined by mode, have the Dropbox server try to autorename the file to avoid conflict. 
+The default for this field is False.
+#--client_modified Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? The value to store as the client_modified timestamp. 
+Dropbox automatically records the time at which the file was written to the Dropbox servers. 
+It can also record an additional timestamp, provided by Dropbox desktop clients, mobile clients, 
+and API apps of when the file was actually created or modified. This field is optional.
+#--mute Boolean Normally, users are made aware of any file modifications in their Dropbox account via notifications in the client software. 
+If true, this tells the clients that this modification shouldn't result in a user notification. The default for this field is False.
+#--property_groups List of (PropertyGroup)? List of custom properties to add to file. This field is optional.
+PropertyGroup
+A subset of the property fields described by the corresponding PropertyGroupTemplate. Properties are always added to a Dropbox file as a PropertyGroup. 
+The possible key names and value types in this group are defined by the corresponding PropertyGroupTemplate. 
+This datatype comes from an imported namespace originally defined in the file_properties namespace.
+#--#--template_id String(min_length=1, pattern="(/|ptid:).*") A unique identifier for the associated template.
+#--#--fields List of (PropertyField) The actual properties associated with the template. There can be up to 32 property types per template.
+PropertyField
+Raw key/value data to be associated with a Dropbox file. Property fields are added to Dropbox files as a PropertyGroup. 
+This datatype comes from an imported namespace originally defined in the file_properties namespace.
+#--#--#--name String Key of the property field associated with a file and template. Keys can be up to 256 bytes.
+#--#--#--value String Value of the property field associated with a file and template. Values can be up to 1024 bytes.
+--
+Returns
+FileMetadata
+*/
+
+function db2_upload pAccessToken,pPath,pData,pMode,pAutorename,pClientModified,pMute,pPropertyGroupsArray
    local tHeader,tPost,tUrl
-   put db2_upload_HEADER(pAccessToken,pPath,pMode,pAutorename,pMute) into tHeader
+   put db2_upload_HEADER(pAccessToken,pPath,pMode,pAutorename,pClientModified,pMute,pPropertyGroupsArray) into tHeader
    put db2_upload_POST(pData) into tPost
    put db2_upload_URL() into tUrl
    return db2_API2(tHeader,tPost,tUrl)
-   /*Returns
-   FileMetadata
-   */
 end db2_upload
+
+/**
+db2_upload_session_append_v2 pAccessToken,pSessionID,pOffset,pClose,pData
+--
+Description
+Append more data to an upload session.
+When the parameter close is set, this call will close the session.
+A single request should not upload more than 150 MB.
+--
+for header
+Dropbox-API-Arg: {"cursor": {"session_id": "AAAAAAAAApUz1Z-pUXNJqw","offset": 69},"close": false}
+--
+UploadSessionAppendArg
+#--cursor UploadSessionCursor Contains the upload session ID and the offset.
+UploadSessionCursor
+#--session_id String The upload session ID (returned by upload_session/start).
+#--offset UInt64 The amount of data that has been uploaded so far. We use this to make sure upload data isn't lost or duplicated in the event of a network error.
+#--close Boolean If true, the current session will be closed, at which point you won't be able to call upload_session/append_v2 anymore with the current session. 
+The default for this field is False.
+--
+Returns
+No return values. 
+*/
+
+function db2_upload_session_append_v2 pAccessToken,pSessionID,pOffset,pClose,pData
+   local tHeader,tPost,tUrl
+   put db2_upload_session_append_v2_HEADER(pAccessToken,pSessionID,pOffset,pClose) into tHeader
+   put db2_upload_session_append_v2_POST(pData) into tPost
+   put db2_upload_session_append_v2_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_upload_session_append_v2
 
 /**
 db2_upload_session_finish pAccessToken,pSessionID,pOffset,pPath,pMode,pAutorename,pMute,pData,pClientModified,pPropertyGroupsArray
@@ -2770,7 +2719,75 @@ function db2_upload_session_start pAccessToken,pClose,pData
 end db2_upload_session_start
 
 -----------------------------------------------------------------------------
+------paper------------------------------------------------------
+-----------------------------------------------------------------------------
+/**
+db2_docs_list pAccessToken,pFilterBy,pSortBy,pSortOrder,pLimit
+--
+Description
+Return the list of all Paper docs according to the argument specifications. 
+To iterate over through the full pagination, pass the cursor to docs/list/continue. 
+--
+for POST
+{"filter_by": "docs_created","sort_by": "modified","sort_order": "descending","limit": 100}
+--
+ListPaperDocsArgs
+#--filter_by ListPaperDocsFilterBy Allows user to specify how the Paper docs should be filtered. The default for this union is docs_accessed.
+ListPaperDocsFilterBy (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--docs_accessed Void 
+Fetches all Paper doc IDs that the user has ever accessed.
+#--#--docs_created Void 
+Fetches only the Paper doc IDs that the user has created.
+#--sort_by ListPaperDocsSortBy 
+Allows user to specify how the Paper docs should be sorted. The default for this union is accessed.
+ListPaperDocsSortBy (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--accessed Void 
+Sorts the Paper docs by the time they were last accessed.
+#--#--modified Void 
+Sorts the Paper docs by the time they were last modified.
+#--#--created Void 
+Sorts the Paper docs by the creation time.
+#--sort_order ListPaperDocsSortOrder 
+Allows user to specify the sort order of the result. The default for this union is ascending.
+ListPaperDocsSortOrder (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--ascending Void 
+Sorts the search result in ascending order.
+#--#--descending Void 
+Sorts the search result in descending order.
+#--limit Int32 
+Size limit per batch. The maximum number of docs that can be retrieved per batch is 1000. 
+Higher value results in invalid arguments error. The default for this field is 1000.
+--
+Returns
+ListPaperDocsResponse
+doc_ids List of (String) The list of Paper doc IDs that can be used to access the given Paper docs or supplied to other API methods. The list is sorted in the order specified by the initial call to docs/list.
+cursor Cursor Pass the cursor into docs/list/continue to paginate through all files. The cursor preserves all properties as specified in the original call to docs/list.
+Cursor
+value String The actual cursor value.
+expiration Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? Expiration time of value.
+Some cursors might have expiration time assigned. This is a UTC value after which the cursor is no longer valid and the API starts returning an error. If cursor expires a new one needs to be obtained and pagination needs to be restarted. Some cursors might be short-lived some cursors might be long-lived.
+This really depends on the sorting type and order, e.g.:
+1. on one hand, listing docs created by the user, sorted by the created time ascending will have undefinite expiration because the results cannot change while the iteration is happening. This cursor would be suitable for long term polling.
+2. on the other hand, listing docs sorted by the last modified time will have a very short expiration as docs do get modified very often and the modified time can be changed while the iteration is happening thus altering the results. This field is optional.
+has_more Boolean Will be set to True if a subsequent call with the provided cursor to docs/list/continue returns immediately with some results. If set to False please allow some delay before making another call to docs/list/continue.
+*/
+
+function db2_docs_list pAccessToken,pFilterBy,pSortBy,pSortOrder,pLimit
+  local tHeader,tPost,tUrl
+   put db2_docs_list_HEADER(pAccessToken) into tHeader
+   put db2_docs_list_POST(pFilterBy,pSortBy,pSortOrder,pLimit) into tPost
+   put db2_docs_list_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_list
+
+
+
+-----------------------------------------------------------------------------
 -----------sharing---------------------------------------------------------
+-----------------------------------------------------------------------------
 
 function db2_add_file_member pAccessToken,pFile,pMemberArray,pMessage,pQuiet,pAccessLevel,pAddMessageAsComment
    /*
@@ -4817,13 +4834,18 @@ end db2_Header_APISharedLinkFile
 
 -----------------------------------------------------------------------------
 ------------individual headers for all API---------------------------------------
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 -------auth--------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 function db2_token_revoke_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_token_revoke_HEADER
 
+-----------------------------------------------------------------------------
 -------users--------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 function db2_get_account_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
@@ -4840,6 +4862,58 @@ end db2_get_current_account_HEADER
 function db2_get_space_usage_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_get_space_usage_HEADER
+
+-----------------------------------------------------------------------------
+-------file properties--------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+function db2_properties_add_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_properties_add_HEADER
+
+function db2_properties_overwrite_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_properties_overwrite_HEADER
+
+function db2_properties_remove_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_properties_remove_HEADER
+
+function db2_properties_search_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_properties_search_HEADER
+
+function db2_properties_search_continue_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_properties_search_continue_HEADER
+
+function db2_properties_update_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_properties_update_HEADER
+
+-----------------------------------------------------------------------------
+-------file properties templates--------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+function db2_templates_add_for_user_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_templates_add_for_user_HEADER
+
+function db2_templates_get_for_user_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_templates_get_for_user_HEADER
+
+function db2_templates_list_for_user_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_templates_list_for_user_HEADER
+
+function db2_templates_remove_for_user_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_templates_remove_for_user_HEADER
+
+function db2_templates_update_for_user_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_templates_update_for_user_HEADER
 
 -----------------------------------------------------------------------------
 ---------file requests-------------------------------------------
@@ -4866,9 +4940,13 @@ end db2_update_HEADER
 -------files--------------------------------------------------------------
 -----------------------------------------------------------------------------
 
-function db2_get_metadata_HEADER pAccessToken
+function db2_copy_batch_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
-end db2_get_metadata_HEADER
+end db2_copy_batch_HEADER
+
+function db2_copy_batch_check_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_copy_batch_check_HEADER
 
 function db2_copy_reference_get_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
@@ -4878,82 +4956,13 @@ function db2_copy_reference_save_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_copy_reference_save_HEADER
 
-function db2_get_temporary_link_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_get_temporary_link_HEADER
-
-function db2_properties_add_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_properties_add_HEADER
-
-function db2_properties_overwrite_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_properties_overwrite_HEADER
-
-function db2_properties_remove_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_properties_remove_HEADER
-
-function db2_templates_add_for_user_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_templates_add_for_user_HEADER
-
-function db2_templates_get_for_user_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_templates_get_for_user_HEADER
-
-function db2_templates_list_for_user_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_templates_list_for_user_HEADER
-
-function db2_templates_remove_for_user_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_templates_remove_for_user_HEADER
-
-function db2_templates_update_for_user_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_templates_update_for_user_HEADER
-
-function db2_properties_update_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_properties_update_HEADER
-
-function db2_properties_search_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_properties_search_HEADER
-
-function db2_properties_search_continue_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_properties_search_continue_HEADER
-
-function db2_save_url_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_save_url_HEADER
-
-function db2_save_url_check_job_status_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_save_url_check_job_status_HEADER
-
---------------------------------------------------------------
 function db2_copy_v2_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_copy_v2_HEADER
 
-function db2_copy_batch_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_copy_batch_HEADER
-
-function db2_copy_batch_check_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_copy_batch_check_HEADER
-
 function db2_create_folder_v2_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_create_folder_v2_HEADER
-
-function db2_delete_v2_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_delete_v2_HEADER
 
 function db2_delete_batch_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
@@ -4962,6 +4971,10 @@ end db2_delete_batch_HEADER
 function db2_delete_batch_check_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_delete_batch_check_HEADER
+
+function db2_delete_v2_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_delete_v2_HEADER
 
 function db2_download_HEADER pAccessToken,pPath
    return db2_Header_Auth(pAccessToken) & cr & db2_Header_EmptyContent() & cr & db2_Header_APIDownload(pPath)
@@ -4978,6 +4991,10 @@ end db2_get_metadata_HEADER
 function db2_get_preview_HEADER pAccessToken,pPath
    return db2_Header_Auth(pAccessToken) & cr & db2_Header_EmptyContent() & cr & db2_Header_APIPreview(pPath)
 end db2_get_preview_HEADER
+
+function db2_get_temporary_link_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_get_temporary_link_HEADER
 
 function db2_get_thumbnail_HEADER pAccessToken,pPath,pFormat,pSize
    if pFormat is empty then put "jpeg" into pFormat
@@ -5009,10 +5026,6 @@ function db2_list_revisions_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_list_revisions_HEADER
 
-function db2_move_v2_HEADER pAccessToken
-   return db2_Header_Standard(pAccessToken)
-end db2_move_v2_HEADER
-
 function db2_move_batch_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_move_batch_HEADER
@@ -5021,6 +5034,10 @@ function db2_move_batch_check_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_move_batch_check_HEADER
 
+function db2_move_v2_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_move_v2_HEADER
+
 function db2_permanently_delete_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_permanently_delete_HEADER
@@ -5028,6 +5045,14 @@ end db2_permanently_delete_HEADER
 function db2_restore_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_restore_HEADER
+
+function db2_save_url_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_save_url_HEADER
+
+function db2_save_url_check_job_status_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_save_url_check_job_status_HEADER
 
 function db2_search_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
@@ -5064,7 +5089,16 @@ function db2_upload_session_start_HEADER pAccessToken,pClose
 end db2_upload_session_start_HEADER
 
 ----------------------------------------------------------------
+------paper-----------------------------------------------
+----------------------------------------------------------------
+
+function db2_docs_list_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_list_HEADER
+
+----------------------------------------------------------------
 ------sharing-----------------------------------------------
+----------------------------------------------------------------
 
 function db2_add_file_member_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
@@ -5238,12 +5272,15 @@ end db2_update_folder_policy_HEADER
 ------------individual URLs for all API---------------------------------------
 ----------------------------------------------------------------
 ---------auth------------------------------------------------
+----------------------------------------------------------------
 
 function db2_token_revoke_URL
    return "https://api.dropboxapi.com/2/auth/token/revoke"
 end db2_token_revoke_URL 
 
+----------------------------------------------------------------
 ---------users------------------------------------------------
+----------------------------------------------------------------
 
 function db2_get_account_URL
    return "https://api.dropboxapi.com/2/users/get_account"
@@ -5260,6 +5297,58 @@ end db2_get_current_account_URL
 function db2_get_space_usage_URL
    return "https://api.dropboxapi.com/2/users/get_space_usage"
 end db2_get_space_usage_URL 
+
+----------------------------------------------------------------
+---------file properties------------------------------------------------
+----------------------------------------------------------------
+
+function db2_properties_add_URL
+   return "https://api.dropboxapi.com/2/file_properties/properties/add"
+end db2_properties_add_URL 
+
+function db2_properties_overwrite_URL
+   return "https://api.dropboxapi.com/2/file_properties/properties/overwrite"
+end db2_properties_overwrite_URL 
+
+function db2_properties_remove_URL
+   return "https://api.dropboxapi.com/2/file_properties/properties/remove"
+end db2_properties_remove_URL 
+
+function db2_properties_search_URL
+   return "https://api.dropboxapi.com/2/file_properties/properties/search"
+end db2_properties_search_URL 
+
+function db2_properties_search_continue_URL
+   return "https://api.dropboxapi.com/2/file_properties/properties/search/continue"
+end db2_properties_search_continue_URL 
+
+function db2_properties_update_URL
+   return "https://api.dropboxapi.com/2/file_properties/properties/update"
+end db2_properties_update_URL 
+
+----------------------------------------------------------------
+---------file properties templates------------------------------------------------
+----------------------------------------------------------------
+
+function db2_templates_add_for_user_URL
+   return "https://api.dropboxapi.com/2/file_properties/templates/add_for_user"
+end db2_templates_add_for_user_URL 
+
+function db2_templates_get_for_user_URL
+   return "https://api.dropboxapi.com/2/file_properties/templates/get_for_user"
+end db2_templates_get_for_user_URL 
+
+function db2_templates_list_for_user_URL
+   return "https://api.dropboxapi.com/2/file_properties/templates/list_for_user"
+end db2_templates_list_for_user_URL 
+
+function db2_templates_remove_for_user_URL
+   return "https://api.dropboxapi.com/2/file_properties/templates/remove_for_user"
+end db2_templates_remove_for_user_URL 
+
+function db2_templates_update_for_user_URL
+   return "https://api.dropboxapi.com/2/file_properties/templates/update_for_user"
+end db2_templates_update_for_user_URL 
 
 -----------------------------------------------------------------------------
 ---------file requests-------------------------------------------
@@ -5286,13 +5375,13 @@ end db2_update_URL
 ---------files------------------------------------------------
 -----------------------------------------------------------------------------
 
-function db2_get_metadata_URL
-   return "https://api.dropboxapi.com/2/files/get_metadata"
-end db2_get_metadata_URL 
+function db2_copy_batch_URL
+   return "https://api.dropboxapi.com/2/files/copy_batch"
+end db2_copy_batch_URL 
 
-function db2_upload_URL
-   return "https://content.dropboxapi.com/2/files/upload"
-end db2_upload_URL 
+function db2_copy_batch_check_URL
+   return "https://api.dropboxapi.com/2/files/copy_batch/check"
+end db2_copy_batch_check_URL 
 
 function db2_copy_reference_get_URL
    return "https://api.dropboxapi.com/2/files/copy_reference/get"
@@ -5302,89 +5391,13 @@ function db2_copy_reference_save_URL
    return "https://api.dropboxapi.com/2/files/copy_reference/save"
 end db2_copy_reference_save_URL 
 
-function db2_get_temporary_link_URL
-   return "https://api.dropboxapi.com/2/files/get_temporary_link"
-end db2_get_temporary_link_URL 
-
-----------------------------------------------------------------
----------properties------------------------------------------------
-
-function db2_properties_add_URL
-   return "https://api.dropboxapi.com/2/file_properties/properties/add"
-end db2_properties_add_URL 
-
-function db2_properties_overwrite_URL
-   return "https://api.dropboxapi.com/2/file_properties/properties/overwrite"
-end db2_properties_overwrite_URL 
-
-function db2_properties_remove_URL
-   return "https://api.dropboxapi.com/2/file_properties/properties/remove"
-end db2_properties_remove_URL 
-
-function db2_properties_update_URL
-   return "https://api.dropboxapi.com/2/file_properties/properties/update"
-end db2_properties_update_URL 
-
-function db2_properties_search_URL
-   return "https://api.dropboxapi.com/2/file_properties/properties/search"
-end db2_properties_search_URL 
-
-function db2_properties_search_continue_URL
-   return "https://api.dropboxapi.com/2/file_properties/properties/search/continue"
-end db2_properties_search_continue_URL 
-
-----------------------------------------------------------------
----------templates------------------------------------------------
-
-function db2_templates_add_for_user_URL
-   return "https://api.dropboxapi.com/2/file_properties/templates/add_for_user"
-end db2_templates_add_for_user_URL 
-
-function db2_templates_get_for_user_URL
-   return "https://api.dropboxapi.com/2/file_properties/templates/get_for_user"
-end db2_templates_get_for_user_URL 
-
-function db2_templates_list_for_user_URL
-   return "https://api.dropboxapi.com/2/file_properties/templates/list_for_user"
-end db2_templates_list_for_user_URL 
-
-function db2_templates_remove_for_user_URL
-   return "https://api.dropboxapi.com/2/file_properties/templates/remove_for_user"
-end db2_templates_remove_for_user_URL 
-
-function db2_templates_update_for_user_URL
-   return "https://api.dropboxapi.com/2/file_properties/templates/update_for_user"
-end db2_templates_update_for_user_URL 
-
-function db2_save_url_URL
-   return "https://api.dropboxapi.com/2/files/save_url"
-end db2_save_url_URL 
-
-function db2_save_url_check_job_status_URL
-   return "https://api.dropboxapi.com/2/files/save_url/check_job_status"
-end db2_save_url_check_job_status_URL 
-
------------------------------------------------------------------------------------
-
 function db2_copy_v2_URL
    return "https://api.dropboxapi.com/2/files/copy_v2"
 end db2_copy_v2_URL 
 
-function db2_copy_batch_URL
-   return "https://api.dropboxapi.com/2/files/copy_batch"
-end db2_copy_batch_URL 
-
-function db2_copy_batch_check_URL
-   return "https://api.dropboxapi.com/2/files/copy_batch/check"
-end db2_copy_batch_check_URL 
-
 function db2_create_folder_v2_URL
    return "https://api.dropboxapi.com/2/files/create_folder_v2"
 end db2_create_folder_v2_URL 
-
-function db2_delete_v2_URL
-   return "https://api.dropboxapi.com/2/files/delete_v2"
-end db2_delete_v2_URL 
 
 function db2_delete_batch_URL
    return "https://api.dropboxapi.com/2/files/delete_batch"
@@ -5393,6 +5406,10 @@ end db2_delete_batch_URL
 function db2_delete_batch_check_URL
    return "https://api.dropboxapi.com/2/files/delete_batch/check"
 end db2_delete_batch_check_URL 
+
+function db2_delete_v2_URL
+   return "https://api.dropboxapi.com/2/files/delete_v2"
+end db2_delete_v2_URL 
 
 function db2_download_URL
    return "https://content.dropboxapi.com/2/files/download"
@@ -5409,6 +5426,10 @@ end db2_get_metadata_URL
 function db2_get_preview_URL
    return "https://content.dropboxapi.com/2/files/get_preview"
 end db2_get_preview_URL
+
+function db2_get_temporary_link_URL
+   return "https://api.dropboxapi.com/2/files/get_temporary_link"
+end db2_get_temporary_link_URL 
 
 function db2_get_thumbnail_URL
    return "https://content.dropboxapi.com/2/files/get_thumbnail"
@@ -5438,10 +5459,6 @@ function db2_list_revisions_URL
    return "https://api.dropboxapi.com/2/files/list_revisions"
 end db2_list_revisions_URL
 
-function db2_move_v2_URL
-   return "https://api.dropboxapi.com/2/files/move_v2"
-end db2_move_v2_URL
-
 function db2_move_batch_URL
    return "https://api.dropboxapi.com/2/files/move_batch"
 end db2_move_batch_URL
@@ -5450,9 +5467,9 @@ function db2_move_batch_check_URL
    return "https://api.dropboxapi.com/2/files/move_batch/check"
 end db2_move_batch_check_URL 
 
-function db2_move_batch_check_URL
-   return "https://api.dropboxapi.com/2/files/move_batch_check"
-end db2_move_batch_check_URL 
+function db2_move_v2_URL
+   return "https://api.dropboxapi.com/2/files/move_v2"
+end db2_move_v2_URL
 
 function db2_permanently_delete_URL
   return "https://api.dropboxapi.com/2/files/permanently_delete"
@@ -5462,6 +5479,14 @@ function db2_restore_URL
    return "https://api.dropboxapi.com/2/files/restore"
 end db2_restore_URL 
 
+function db2_save_url_URL
+   return "https://api.dropboxapi.com/2/files/save_url"
+end db2_save_url_URL 
+
+function db2_save_url_check_job_status_URL
+   return "https://api.dropboxapi.com/2/files/save_url/check_job_status"
+end db2_save_url_check_job_status_URL 
+
 function db2_search_URL
    return "https://api.dropboxapi.com/2/files/search"
 end db2_search_URL 
@@ -5469,10 +5494,6 @@ end db2_search_URL
 function db2_upload_URL
    return "https://content.dropboxapi.com/2/files/upload"
 end db2_upload_URL 
-
-function db2_upload_session_start_URL
-   return "https://content.dropboxapi.com/2/files/upload_session/start"
-end db2_upload_session_start_URL 
 
 function db2_upload_session_append_v2_URL
    return "https://content.dropboxapi.com/2/files/upload_session/append_v2"
@@ -5490,9 +5511,21 @@ function db2_upload_session_finish_batch_check_URL
    return "https://api.dropboxapi.com/2/files/upload_session/finish_batch/check"
 end db2_upload_session_finish_batch_check_URL 
 
+function db2_upload_session_start_URL
+   return "https://content.dropboxapi.com/2/files/upload_session/start"
+end db2_upload_session_start_URL 
+
+----------------------------------------------------------------
+------paper-----------------------------------------------
+----------------------------------------------------------------
+
+function db2_docs_list_URL
+   return "https://api.dropboxapi.com/2/paper/docs/list"
+end db2_docs_list_URL 
 
 ----------------------------------------------------------------
 ---------sharing---------------------------------------------
+----------------------------------------------------------------
 
 function db2_add_file_member_URL
    return "https://api.dropboxapi.com/2/sharing/add_file_member"
@@ -5655,8 +5688,10 @@ end db2_update_folder_policy_URL
 ------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 ------------individual Posts for all API---------------------------------------
-------------------------------------------------------------------------------------------------------
-----------auth-------------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+-------auth--------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 function db2_token_revoke_POST
    /*
@@ -5665,11 +5700,21 @@ function db2_token_revoke_POST
    return "null"
 end db2_token_revoke_POST
 
-----------user-------------------------------------------------------------------------------
+----------------------------------------------------------------
+---------users------------------------------------------------
+----------------------------------------------------------------
 
 function db2_get_account_POST pUserAccountID
    return db2_CB(db2_Q("account_id") & ": " & db2_Q(pUserAccountID))
 end db2_get_account_POST
+
+function db2_get_account_batch_POST pUserAccountIDs
+   if pUserAccountIDs is empty then 
+      return db2_CB(db2_Q("account_ids") & ": " & db2_SB())
+   else
+      return db2_CB(db2_Q("account_ids") & ": " & db2_SBQListFromCRList(pUserAccountIDs))
+   end if
+end db2_get_account_batch_POST
 
 /*
 db2_get_current_account_POST
@@ -5690,14 +5735,6 @@ No parameters. Null required; empty value fails. See https://dropbox.github.io/d
 function db2_get_space_usage_POST
    return "null"
 end db2_get_space_usage_POST
-
-function db2_get_account_batch_POST pUserAccountIDs
-   if pUserAccountIDs is empty then 
-      return db2_CB(db2_Q("account_ids") & ": " & db2_SB())
-   else
-      return db2_CB(db2_Q("account_ids") & ": " & db2_SBQListFromCRList(pUserAccountIDs))
-   end if
-end db2_get_account_batch_POST
 
 -----------------------------------------------------------------------------
 ---------file requests-------------------------------------------
@@ -6222,8 +6259,16 @@ function db2_restore_POST pPath,pRevision
 end db2_restore_POST
 
 ----------------------------------------------------------------
+------paper-----------------------------------------------
+----------------------------------------------------------------
+
+function db2_docs_list_POST pFilterBy,pSortBy,pSortOrder,pLimit
+   return ""
+end db2_docs_list_POST
+
 ----------------------------------------------------------------
 ---------sharing-----------------------------------------
+----------------------------------------------------------------
 
 function db2_add_file_member_POST pFile,pMembersArray,pMessage,pQuiet,pAccessLevel,pAddMessageAsComment
    /*
