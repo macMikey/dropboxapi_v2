@@ -1,5 +1,5 @@
 DropBox API v2 Library
-v2.1  Dec 29 2017
+v2.2  Dec 30 2017
 
 --doesn't include business pro API
 
