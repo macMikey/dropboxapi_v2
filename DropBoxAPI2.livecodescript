@@ -668,9 +668,9 @@ null. No return values.
 
 function db2_templates_remove_for_user pAccessToken,pTemplateID
    local tHeader,tPost,tUrl
-   put db2_templates_list_for_user_HEADER(pAccessToken) into tHeader
-   put db2_templates_list_for_user_POST(pTemplateID) into tPost
-   put db2_templates_list_for_user_URL() into tUrl
+   put db2_templates_remove_for_user_HEADER(pAccessToken) into tHeader
+   put db2_templates_remove_for_user_POST(pTemplateID) into tPost
+   put db2_templates_remove_for_user_URL() into tUrl
    return db2_API2(tHeader,tPost,tUrl)
 end db2_templates_remove_for_user
 
@@ -836,8 +836,12 @@ db2_list pAccessToken
 Description
 Returns a list of file requests owned by this user.
 For apps with the app folder permission, this will only return file requests with destinations in the app folder.
+#Note: this seems to require Apps to have full Dropbox access to use this endpoint.
+For App folder apps, a 500 server error results
 --
-No parameters
+No parameters. Null is used at https://dropbox.github.io/dropbox-api-v2-explorer/#file_requests_list
+Note: this seems to require Apps to have full Dropbox access to use this endpoint.
+For App folder apps, a 500 server error results including in the API explorer (url above)
 --
 Returns
 ListFileRequestsResult
@@ -949,8 +953,8 @@ always Void
 function db2_update pAccessToken,pRequestID,pTitle,pDestination,pOpenBoolean
    local tHeader,tPost,tUrl
    put db2_update_HEADER(pAccessToken) into tHeader
-   put db2_update_POST() into tPost
-   put db2_update_URL(pRequestID,pTitle,pDestination,pOpenBoolean) into tUrl
+   put db2_update_POST(pRequestID,pTitle,pDestination,pOpenBoolean) into tPost
+   put db2_update_URL() into tUrl
    return db2_API2(tHeader,tPost,tUrl)
 end db2_update
 
@@ -5805,19 +5809,19 @@ end db2_templates_update_for_user_URL
 
 function db2_create_URL
    return "https://api.dropboxapi.com/2/file_requests/create"
-end db2_create_URL 
+end db2_create_URL
 
 function db2_get_URL
    return "https://api.dropboxapi.com/2/file_requests/get"
-end db2_get_URL 
+end db2_get_URL
 
 function db2_list_URL
    return "https://api.dropboxapi.com/2/file_requests/list"
-end db2_list_URL 
+end db2_list_URL
 
 function db2_update_URL
    return "https://api.dropboxapi.com/2/file_requests/update"
-end db2_update_URL 
+end db2_update_URL
 
 -----------------------------------------------------------------------------
 ---------files------------------------------------------------
@@ -6251,7 +6255,9 @@ end db2_get_space_usage_POST
 
 function db2_create_POST pTitle,pDestination,pOpenBoolean
    if pOpenBoolean is empty then put "true" into pOpenBoolean
-   return db2_CB(db2_Q("title") & ": " & db2_Q(pTitle) & "," & db2_Q("destination") & ": " & db2_Q(pDestination )& "," & db2_Q("open") & ": " & db2_Q(pOpenBoolean))
+   return db2_CB(db2_Q("title") & ": " & db2_Q(pTitle) & "," &  \
+         db2_Q("destination") & ": " & db2_Q(pDestination ) & "," &  \
+         db2_Q("open") & ": " & pOpenBoolean)
 end db2_create_POST
 
 function db2_get_POST pRequestID
@@ -6261,6 +6267,8 @@ end db2_get_POST
 /*
 db2_list_POST
 No parameters. Null is used at https://dropbox.github.io/dropbox-api-v2-explorer/#file_requests_list
+Note: this seems to require Apps to have full Dropbox access to use this endpoint.
+For App folder apps, a 500 server error results including in the API explorer (url above)
 */
 
 function db2_list_POST
@@ -6270,6 +6278,7 @@ end db2_list_POST
 /*
 db2_update_POST pRequestID,pTitle,pDestination,pOpenBoolean
 omit optional fields; don't implement deadline which requires Business
+{"id": "aRN7o6xjpwkI3KJ26oaD","title": "Homework1","destination": "/AppFileRequests/Homework1"}
 */
 
 function db2_update_POST pRequestID,pTitle,pDestination,pOpenBoolean
@@ -6282,7 +6291,7 @@ function db2_update_POST pRequestID,pTitle,pDestination,pOpenBoolean
       put "," & db2_Q("destination") & ": " & db2_Q(pDestination) after tString
    end if
    if pOpenBoolean is not empty then
-      put "," & db2_Q("open") & ": " & db2_Q(pOpenBoolean) after tString
+      put "," & db2_Q("open") & ": " & pOpenBoolean after tString
    end if
    return db2_CB(tString)
 end db2_update_POST
@@ -6394,10 +6403,10 @@ end db2_save_url_check_job_status_POST
 function db2_templates_add_for_user_POST pTemplateName,pTemplateDescription,pFieldsArray
    return db2_CB(db2_Q("name") & ": " & db2_Q(pTemplateName) & "," &  \
          db2_Q("description") & ": " & db2_Q(pTemplateDescription) & "," &  \
-         db2_Q("fields") & ": " & db2_SB(db2_FieldsString(pFieldsArray)))
+         db2_Q("fields") & ": " & db2_FieldsString(pFieldsArray))
 end db2_templates_add_for_user_POST
 
-function db2_templates_get_for_user_POST pTemplateID
+
     return db2_CB(db2_Q("template_id") & ": " & db2_Q(pTemplateID))
 end db2_templates_get_for_user_POST
 
@@ -7587,7 +7596,7 @@ end db2_update_folder_policy_POST
 #-- ------------------------------------------------------------------------------------------------------------
 #-- --------------property groups and fields -------------------------------------------------------
 
-function db2_FieldsString pFieldsArray
+ pFieldsArray
    /*
    used by
    db2_templates_add_for_user_POST
