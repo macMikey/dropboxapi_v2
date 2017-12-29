@@ -1,0 +1,33 @@
+/*
+Shared folder notes
+If you give people edit access to a folder in your Dropbox, it becomes a shared folder. 
+Changes to the contents of these shared folders are synced to everyone who has access to the shared folder.
+People with edit access can:
+edit files
+comment on files
+and view files
+Note: Make sure you pick a good name for the shared folder as the name of a shared folder can't be changed once it is created 
+(you can change it locally but new and existing members will see the original name).
+	
+Free teams are built for Basic and Pro users who work together at the same company or on the same projects.
+When you create or join a free team, you get access to:
+The team folder
+The team folder is a company- or organization-wide folder that’s automatically shared with all members of a free team. 
+Changes to a file in the team folder will reflect in the work Dropbox of each team member.
+All sub-folders in the team folder are automatically shared with your entire free team; however, if you’re working on a project 
+with external collaborators, you can choose to share certain sub-folders with those contributors as well. 
+If you're the owner of a shared folder, you can easily keep company information in one place by dragging existing shared folders into the team folder from your desktop or move them at dropbox.com.
+A separate work and personal Dropbox
+Team members can connect work and personal Dropbox accounts, and easily toggle between the two. 
+Both accounts are accessible on dropbox.com, and on any connected computer or mobile device.
+Groups
+A group is a preset list of members. By creating a group you can share files or folders with everyone in that list with a single click, 
+rather than adding colleagues one-by-one.
+Sharing controls
+Team members can limit access to shared folders and links to team members only.
+Dropbox Pro users: You can control who has access to your shared links and for how long by setting passwords and expirations.
+Dropbox Business or team users: You can create groups to share with specific team members. 
+Dropbox Business users can also control who has access to shared links and for how long by setting passwords and expirations.
+Dropbox Pro and Dropbox Business users: You can prevent others from adding, editing, or deleting files in your shared folder 
+by setting view-only permissions.
+*/
