@@ -1,309 +1,3 @@
-/*
-DropBox API v2 Library
-v2.0  Dec 27 2017
---doesn't include business pro API
---OAuth 2 not included since tokens are easily obtained from apps via https://www.dropbox.com/developers/apps
-
-Copyright (c) 2016-7 Gerard McCarthy
-The MIT License (MIT)
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-----------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------
-/*
-Version Notes
-
-v2.0
-added or updated
-file_properties-properties_add
-file_properties-properties_overwrite
-file_properties-properties_remove
-file_properties-properties_search
-file_properties-properties_search_continue
-file_properties-properties_update
-file_properties-templates_add_for_user
-file_properties-templates_get_for_user
-file_properties-templates_list_for_user
-file_properties-templates_remove_for_user
-file_properties-templates_update_for_user
-file_requests-create
-file_requests-get
-file_requests-list
-file_requests-update
-files-copy_batch
-files-copy_batch_check
-files-copy_reference_get
-files-copy_reference_save
-files-copy_v2
-files-create_folder_v2
-files-delete_batch
-files-delete_batch_check
-files-delete_v2
-files-download
-files-download_zip
-files-get_metadata
-files-get_preview
-files-get_temporary_link
-files-get_thumbnail
-files-get_thumbnail_batch
-files-list_folder
-files-list_folder_continue
-files-list_folder_get_latest_cursor
-files-list_folder_longpoll
-files-list_revisions
-files-move_batch
-files-move_batch_check
-files-move_v2
-files-permanently_delete
-files-restore
-files-save_url
-files-save_url_check_job_status
-files-search
-files-upload
-files-upload_session_append_v2
-files-upload_session_finish
-files-upload_session_finish_batch
-files-upload_session_finish_batch_check
-files-upload_session_start
-
-Paper Yet to add:
-paper-docs_archive
-paper-docs_create
-paper-docs_download
-paper-docs_folder_users_list
-paper-docs_folder_users_list_continue
-paper-docs_get_folder_info
-paper-docs_list  --only paper added in v2.0
-paper-docs_list_continue
-paper-docs_permanently_delete
-paper-docs_sharing_policy_get
-paper-docs_sharing_policy_set
-paper-docs_update
-paper-docs_users_add
-paper-docs_users_list
-paper-docs_users_list_continue
-paper-docs_users_remove
-
-sharing-update_file_member
-
-deprecated, removed and replaced with:
-/alpha/get_metadata --> files-get_metadata
-/alpha/upload --> files-upload
-/copy --> files-copy_v2
-/create_folder --> files-create_folder_v2
-/delete --> files-delete_v2
-/move --> files-move_v2
-/properties/add --> file_properties-properties_add
-/properties/overwrite --> file_properties-properties_overwrite
-/properties/remove --> file_properties-properties_remove
-/properties/template/get --> file_properties-templates_get_for_user
-/properties/template/list --> file_properties-templates_list_for_user
-/properties/update --> file_properties-properties_update
-/upload_session/append --> files-upload_session_append_v2
-/change_file_member_access --> sharing-update_file_member
-/create_shared_link --> sharing-create_shared_link_with_settings
-/get_shared_links --> sharing-list_shared_links
-/remove_file_member --> sharing-remove_file_member_2
-
-Most comments stripped from POST functions; keeping most comments before commands unless special in nature.
-Added functions/handlers:
-db2_SBQListFromCRList
-db2_FieldsString
-db2_PropertyGroupsString
-db2_UpdatePropertyGroupsString
-db2_UploadString
-db2_Header_APISessionAppend_v2
-db2_Header_APISessionFinish
-db2_Header_APISessionStart
-db2_Header_APIUpload
-
-Renamed common string functions to use the db2_ prefix eg. db2_SB, db2_Q, db2_CB
-
---------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------
-
-v1.1
-Listed main returned metadata seperately
-Added returned info to scripts which are shown in the response text field on clicking call
-Deprecated calls coloured
-db2_upload_session_append,db2_remove_file_member,db2_create_shared_link,db2_get_shared_links
-A number of calls are in alpha or beta and have not been able to be tested fully. eg properties and templates
-added textencode utf-8 for all posts via fGetDropboxAPI2 and db2_API2
-Numerous other bug fixes with all calls tested.
-The Green edit script to text button added to test the library calls manually in its script by removing -- for lines of code.
-
------------------
-additions:
-auth:
-db2_token_revoke
-
-files:
-db2_alpha_get_metadata
-db2_alpha_upload
-db2_copy_reference_get
-db2_copy_reference_save
-db2_get_temporary_link
-db2_properties_add
-db2_properties_overwrite
-db2_properties_remove
-db2_properties_template_get
-db2_properties_template_list
-db2_properties_update
-db2_save_url
-db2_save_url_check_job_status
-db2_upload_session_append_v2
-db2_upload_session_finish_batch
-db2_upload_session_finish_batch_check
-
-Sharing:
-db2_add_file_member
-db2_check_remove_member_job_status
-db2_get_file_metadata
-db2_get_file_metadata_batch
-db2_list_file_members
-db2_list_file_members_batch
-db2_list_file_members_continue
-db2_list_received_files
-db2_list_received_files_continue
-db2_relinquish_file_membership
---/files/download_member
-db2_remove_file_member_2
-db2_unshare_file
-
-----------------------------------------------------------------------------------
-Shared Folder ID Format Change
-The tags shared_folder_id and parent_shared_folder_id in the API response from 
---/files/copy string(dbsfid:BCcDKIi3BO5uA9Kzv1v7I9MBJiqoXZXx7Fo) to a raw id string(123456). 
-This is equivalent to the id returned in API v1.
-The following routes are affected as they return shared_folder_id or parent_shared_folder_id:
-/files/copy
-/files/create_folders
-/files/delete
-/files/download
-/files/get_metadata
-/files/get_preview
-/files/get_thumbnail
-/files/list_folders
-/files/list_folders/continue
-/files/move
-/files/restore
-/files/search
-/files/upload
-
-
-/sharing/list_folders/finish
-/sharing/check_share_job_status
-/sharing/get_folder_metadata
-/sharing/list_folders
-/sharing/list_folders/continue
-/sharing/mount_folder
-/sharing/share_folder
-/sharing/update_folder_policy
-Migrate to the raw IDs by calling /sharing/get_folder_metadata with the encoded IDs to retrieve the raw ID for any stored folder ids.
-
---------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------
-v1.07 
-added descriptions to all
-
-issues: dropbox itself not working properly for: (seem to be fixed before July 2016)
-db2_list_mountable_folders
-db2_list_mountable_folders_continue
-Waiting on response for dropbox developers
-
-additions:
-db2_get_shared_link_file
-db2_list_folder_members
-db2_list_folder_members_continue
-db2_list_folders_continue
-db2_list_mountable_folders
-db2_list_mountable_folders_continue
-db2_list_shared_links
-db2_modify_shared_link_settings
-
---------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------
-v1.06 additions:
-db2_create_shared_link_with_settings
-
---------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------
-v1.05 
-bug fixes
-parameters
-db2_list_folder_longpoll
-db2_list_folder
-db2_upload_HEADER
-db2_upload
-
-removal of quotes around boleans in
-db2_Header_APISessionFinish
-db2_Header_APISessionAppend
-db2_list_folder_POST
-db2_get_metadata_POST
-db2_list_folder_longpoll_POST
-db2_list_folder_get_latest_cursor_POST
-db2_search_POST
-db2_list_revisions_POST
-db2_create_shared_link_POST
-db2_get_folder_metadata_POST
-db2_list_folders_POST
-db2_share_folder_POST
-db2_unshare_folder_POST
-db2_add_folder_member_POST
-db2_remove_folder_member_POST
-*/
---------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------
-
-
-/*
-Shared folder notes
-If you give people edit access to a folder in your Dropbox, it becomes a shared folder. 
-Changes to the contents of these shared folders are synced to everyone who has access to the shared folder.
-People with edit access can:
-edit files
-comment on files
-and view files
-Note: Make sure you pick a good name for the shared folder as the name of a shared folder can't be changed once it is created 
-(you can change it locally but new and existing members will see the original name).
-	
-Free teams are built for Basic and Pro users who work together at the same company or on the same projects.
-When you create or join a free team, you get access to:
-The team folder
-The team folder is a company- or organization-wide folder that’s automatically shared with all members of a free team. 
-Changes to a file in the team folder will reflect in the work Dropbox of each team member.
-All sub-folders in the team folder are automatically shared with your entire free team; however, if you’re working on a project 
-with external collaborators, you can choose to share certain sub-folders with those contributors as well. 
-If you're the owner of a shared folder, you can easily keep company information in one place by dragging existing shared folders into the team folder from your desktop or move them at dropbox.com.
-A separate work and personal Dropbox
-Team members can connect work and personal Dropbox accounts, and easily toggle between the two. 
-Both accounts are accessible on dropbox.com, and on any connected computer or mobile device.
-Groups
-A group is a preset list of members. By creating a group you can share files or folders with everyone in that list with a single click, 
-rather than adding colleagues one-by-one.
-Sharing controls
-Team members can limit access to shared folders and links to team members only.
-Dropbox Pro users: You can control who has access to your shared links and for how long by setting passwords and expirations.
-Dropbox Business or team users: You can create groups to share with specific team members. 
-Dropbox Business users can also control who has access to shared links and for how long by setting passwords and expirations.
-Dropbox Pro and Dropbox Business users: You can prevent others from adding, editing, or deleting files in your shared folder 
-by setting view-only permissions.
-*/
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 ------db2 Library start--------------------------------------------------------
@@ -2721,6 +2415,240 @@ end db2_upload_session_start
 -----------------------------------------------------------------------------
 ------paper------------------------------------------------------
 -----------------------------------------------------------------------------
+
+/**
+db2_docs_archive pAccessToken,pDocID
+--
+Description
+Marks the given Paper doc as archived.
+Note: This action can be performed or undone by anyone with edit permissions to the doc.
+--
+for POST
+{"doc_id": "VWGwn3oEsoA3tIL0QIj2h"}
+--
+RefPaperDoc
+doc_id String The Paper doc ID.
+--
+Returns
+No return values. 
+*/
+
+function db2_docs_archive pAccessToken,pDocID
+   local tHeader,tPost,tUrl
+   put db2_docs_archive_HEADER(pAccessToken) into tHeader
+   put db2_docs_archive_POST(pDocID) into tPost
+   put db2_docs_archive_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_archive
+
+/**
+db2_docs_create pAccessToken,pImportFormat,pParentFolderID,pData
+--
+Description
+Creates a new Paper doc with the provided content.
+--
+for header
+{"import_format": "html","parent_folder_id": "e.gGYT6HSafpMej9bUv306GarglI7GGeAM3yvfZvXHO9u4mV"}
+--
+PaperDocCreateArgs
+#--import_format ImportFormat 
+The format of provided data.
+ImportFormat (open union)
+The import format of the incoming data. The value will be one of the following datatypes. 
+New values may be introduced as our API evolves.
+#--#--html Void 
+The provided data is interpreted as standard HTML.
+#--#--markdown Void 
+The provided data is interpreted as markdown.
+Note: The first line of the provided document will be used as the doc title.
+#--#--plain_text Void 
+The provided data is interpreted as plain text.
+Note: The first line of the provided document will be used as the doc title.
+#--parent_folder_id String? 
+The Paper folder ID where the Paper document should be created. 
+The API user has to have write access to this folder or error is thrown. This field is optional.
+--
+Returns
+PaperDocCreateUpdateResult
+doc_id String Doc ID of the newly created doc.
+revision Int64 The Paper doc revision. Simply an ever increasing number.
+title String The Paper doc title.
+*/
+
+function db2_docs_create pAccessToken,pImportFormat,pParentFolderID,pData
+  local tHeader,tPost,tUrl
+   put db2_docs_create_HEADER(pAccessToken,pImportFormat,pParentFolderID) into tHeader
+   put db2_docs_create_POST(pData) into tPost
+   put db2_docs_create_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_create
+
+/**
+db2_docs_download pAccessToken,pDocID,pExportFormat
+--
+Description
+Exports and downloads Paper doc either as HTML or markdown.
+--
+for header
+{"doc_id": "VWGwn3oEsoA3tIL0QIj2h","export_format": "html"}
+{"doc_id": "VWGwn3oEsoA3tIL0QIj2h","export_format": "markdown"}
+--
+PaperDocExport
+#--doc_id String 
+The Paper doc ID.
+#--export_format ExportFormat
+ExportFormat (open union)
+The desired export format of the Paper doc. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--html Void The HTML export format.
+#--#--markdown Void The markdown export format.
+--
+Returns
+The content of teh export
+--
+PaperDocExportResult
+owner String The Paper doc owner's email address.
+title String The Paper doc title.
+revision Int64 The Paper doc revision. Simply an ever increasing number.
+mime_type String MIME type of the export. This corresponds to ExportFormat specified in the request.
+*/
+
+function db2_docs_download pAccessToken,pDocID,pExportFormat
+   local tHeader,tPost,tUrl
+   put db2_docs_download_HEADER(pAccessToken,pDocID,pExportFormat) into tHeader
+   put db2_docs_download_POST() into tPost
+   put db2_docs_download_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_download
+
+/**
+db2_docs_folder_users_list pAccessToken,pDocID,pLimit
+--
+Description
+Lists the users who are explicitly invited to the Paper folder in  which the Paper doc is contained. 
+For private folders all users  (including owner) shared on the folder are listed and for team folders
+all non-team users shared on the folder are returned.
+--
+for POST
+{"doc_id": "uaSvRuxvnkFa12PTkBv5q","limit": 100}
+--
+ListUsersOnFolderArgs
+doc_id String 
+The Paper doc ID.
+limit Int32 
+Size limit per batch. 
+The maximum number of users that can be retrieved per batch is 1000. Higher value results in invalid arguments error. The default for this field is 1000.
+--
+Returns
+ListUsersOnFolderResponse
+invitees List of (InviteeInfo) List of email addresses that are invited on the Paper folder.
+InviteeInfo (open union)
+Information about the recipient of a shared content invitation. This datatype comes from an imported namespace originally defined in the sharing namespace. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+email String(max_length=255, pattern="^['&A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*.[A-Za-z]{2,15}$") E-mail address of invited user.
+users List of (UserInfo) List of users that are invited on the Paper folder.
+UserInfo
+Basic information about a user. Use users.get_account and users.get_account_batch to obtain more detailed information. This datatype comes from an imported namespace originally defined in the sharing namespace.
+account_id String(min_length=40, max_length=40) The account ID of the user.
+same_team Boolean If the user is in the same team as current user.
+team_member_id String? The team member ID of the shared folder member. Only present if same_team is true. This field is optional.
+cursor Cursor Pass the cursor into docs/folder_users/list/continue to paginate through all users. The cursor preserves all properties as specified in the original call to docs/folder_users/list.
+Cursor
+value String The actual cursor value.
+expiration Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? Expiration time of value.
+Some cursors might have expiration time assigned. This is a UTC value after which the cursor is no longer valid and the API starts returning an error. If cursor expires a new one needs to be obtained and pagination needs to be restarted. Some cursors might be short-lived some cursors might be long-lived.
+This really depends on the sorting type and order, e.g.:
+1. on one hand, listing docs created by the user, sorted by the created time ascending will have undefinite expiration because the results cannot change while the iteration is happening. This cursor would be suitable for long term polling.
+2. on the other hand, listing docs sorted by the last modified time will have a very short expiration as docs do get modified very often and the modified time can be changed while the iteration is happening thus altering the results. This field is optional.
+has_more Boolean Will be set to True if a subsequent call with the provided cursor to docs/folder_users/list/continue returns immediately with some results. If set to False please allow some delay before making another call to docs/folder_users/list/continue.
+*/
+
+function db2_docs_folder_users_list pAccessToken,pDocID,pLimit
+   local tHeader,tPost,tUrl
+   put db2_docs_folder_users_list_HEADER(pAccessToken) into tHeader
+   put db2_docs_folder_users_list_POST(pDocID,pLimit) into tPost
+   put db2_docs_folder_users_list_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_folder_users_list
+
+/**
+db2_docs_folder_users_list_continue pAccessToken,pDocID,pCursor
+--
+Description
+Once a cursor has been retrieved from docs/folder_users/list, use this to paginate through all users on the Paper folder. 
+--
+for POST
+{"doc_id": "uaSvRuxvnkFa12PTkBv5q","cursor": "U60b6BxT43ySd5sAVQbbIvoteSnWLjUdLU7aR25hbt3ySd5sAVQbbIvoteSnWLjUd"}
+--
+ListUsersOnFolderContinueArgs
+#--doc_id String The Paper doc ID.
+#--cursor String The cursor obtained from docs/folder_users/list or docs/folder_users/list/continue. Allows for pagination.
+--
+Returns
+ListUsersOnFolderResponse
+invitees List of (InviteeInfo) List of email addresses that are invited on the Paper folder.
+InviteeInfo (open union)
+Information about the recipient of a shared content invitation. This datatype comes from an imported namespace originally defined in the sharing namespace. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+email String(max_length=255, pattern="^['&A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*.[A-Za-z]{2,15}$") E-mail address of invited user.
+users List of (UserInfo) List of users that are invited on the Paper folder.
+UserInfo
+Basic information about a user. Use users.get_account and users.get_account_batch to obtain more detailed information. This datatype comes from an imported namespace originally defined in the sharing namespace.
+account_id String(min_length=40, max_length=40) The account ID of the user.
+same_team Boolean If the user is in the same team as current user.
+team_member_id String? The team member ID of the shared folder member. Only present if same_team is true. This field is optional.
+cursor Cursor Pass the cursor into docs/folder_users/list/continue to paginate through all users. The cursor preserves all properties as specified in the original call to docs/folder_users/list.
+Cursor
+value String The actual cursor value.
+expiration Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? Expiration time of value.
+Some cursors might have expiration time assigned. This is a UTC value after which the cursor is no longer valid and the API starts returning an error. If cursor expires a new one needs to be obtained and pagination needs to be restarted. Some cursors might be short-lived some cursors might be long-lived.
+This really depends on the sorting type and order, e.g.:
+1. on one hand, listing docs created by the user, sorted by the created time ascending will have undefinite expiration because the results cannot change while the iteration is happening. This cursor would be suitable for long term polling.
+2. on the other hand, listing docs sorted by the last modified time will have a very short expiration as docs do get modified very often and the modified time can be changed while the iteration is happening thus altering the results. This field is optional.
+has_more Boolean Will be set to True if a subsequent call with the provided cursor to docs/folder_users/list/continue returns immediately with some results. If set to False please allow some delay before making another call to docs/folder_users/list/continue.
+*/
+
+function db2_docs_folder_users_list_continue pAccessToken,pDocID,pCursor
+   local tHeader,tPost,tUrl
+   put db2_docs_folder_users_list_continue_HEADER(pAccessToken) into tHeader
+   put db2_docs_folder_users_list_continue_POST(pDocID,pCursor) into tPost
+   put db2_docs_folder_users_list_continue_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_folder_users_list_continue
+
+/**
+db2_docs_get_folder_info pAccessToken,pDocID
+--
+Description
+Retrieves folder information for the given Paper doc. This includes:
+- folder sharing policy; permissions for subfolders are set by the top-level folder.
+- full 'filepath', i.e. the list of folders (both folderId and  folderName) from the root folder to the folder directly containing the  Paper doc.
+Note: If the Paper doc is not in any folder (aka unfiled) the response will be empty.
+--
+for POST
+{"doc_id": "VWGwn3oEsoA3tIL0QIj2h"}
+--
+RefPaperDoc
+#--doc_id String 
+The Paper doc ID.
+--
+Returns
+FoldersContainingPaperDoc
+Metadata about Paper folders containing the specififed Paper doc.
+folder_sharing_policy_type FolderSharingPolicyType? The sharing policy of the folder containing the Paper doc. This field is optional.
+FolderSharingPolicyType (union)
+The sharing policy of a Paper folder.
+Note: The sharing policy of subfolders is inherited from the root folder. The value will be one of the following datatypes:
+team Void Everyone in your team and anyone directly invited can access this folder.
+invite_only Void Only people directly invited can access this folder.
+folders List of (Folder)? The folder path. If present the first folder is the root folder. This field is optional.
+*/
+
+function db2_docs_get_folder_info pAccessToken,pDocID
+  local tHeader,tPost,tUrl
+   put db2_docs_get_folder_info_HEADER(pAccessToken) into tHeader
+   put db2_docs_get_folder_info_POST(pDocID) into tPost
+   put db2_docs_get_folder_info_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_get_folder_info
+
 /**
 db2_docs_list pAccessToken,pFilterBy,pSortBy,pSortOrder,pLimit
 --
@@ -2783,7 +2711,444 @@ function db2_docs_list pAccessToken,pFilterBy,pSortBy,pSortOrder,pLimit
    return db2_API2(tHeader,tPost,tUrl)
 end db2_docs_list
 
+/**
+db2_docs_list_continue pAccessToken,pCursor
+--
+Description
+Once a cursor has been retrieved from docs/list, use this to paginate through all Paper doc. 
+--
+for POST
+{"cursor": "U60b6BxT43ySd5sAVQbbIvoteSnWLjUdLU7aR25hbt3ySd5sAVQbbIvoteSnWLjUd"}
+--
+ListPaperDocsContinueArgs
+cursor String 
+The cursor obtained from docs/list or docs/list/continue. Allows for pagination.
+--
+Returns
+ListPaperDocsResponse
+doc_ids List of (String) The list of Paper doc IDs that can be used to access the given Paper docs or supplied to other API methods. The list is sorted in the order specified by the initial call to docs/list.
+cursor Cursor Pass the cursor into docs/list/continue to paginate through all files. The cursor preserves all properties as specified in the original call to docs/list.
+Cursor
+value String The actual cursor value.
+expiration Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? Expiration time of value.
+Some cursors might have expiration time assigned. This is a UTC value after which the cursor is no longer valid and the API starts returning an error. If cursor expires a new one needs to be obtained and pagination needs to be restarted. Some cursors might be short-lived some cursors might be long-lived.
+This really depends on the sorting type and order, e.g.:
+1. on one hand, listing docs created by the user, sorted by the created time ascending will have undefinite expiration because the results cannot change while the iteration is happening. This cursor would be suitable for long term polling.
+2. on the other hand, listing docs sorted by the last modified time will have a very short expiration as docs do get modified very often and the modified time can be changed while the iteration is happening thus altering the results. This field is optional.
+has_more Boolean Will be set to True if a subsequent call with the provided cursor to docs/list/continue returns immediately with some results. If set to False please allow some delay before making another call to docs/list/continue.
+*/
 
+function db2_docs_list_continue pAccessToken,pCursor
+  local tHeader,tPost,tUrl
+   put db2_docs_list_continue_HEADER(pAccessToken) into tHeader
+   put db2_docs_list_continue_POST(pCursor) into tPost
+   put db2_docs_list_continue_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_list_continue
+
+/**
+db2_docs_permanently_delete pAccessToken,pDocID
+--
+Description
+Permanently deletes the given Paper doc. This operation is final as the doc cannot be recovered.
+Note: This action can be performed only by the doc owner. 
+--
+for POST
+{"doc_id": "VWGwn3oEsoA3tIL0QIj2h"}
+--
+RefPaperDoc
+#--doc_id String 
+The Paper doc ID.
+--
+Returns
+No return values.
+*/
+
+function db2_docs_permanently_delete pAccessToken,pDocID
+  local tHeader,tPost,tUrl
+   put db2_docs_permanently_delete_HEADER(pAccessToken) into tHeader
+   put db2_docs_permanently_delete_POST(pDocID) into tPost
+   put db2_docs_permanently_delete_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_permanently_delete
+
+/**
+db2_docs_sharing_policy_get pAccessToken
+--
+Description
+Gets the default sharing policy for the given Paper doc.
+--
+for POST
+{"doc_id": "VWGwn3oEsoA3tIL0QIj2h"}
+--
+RefPaperDoc
+doc_id String 
+The Paper doc ID.
+--
+Returns
+SharingPolicy
+Sharing policy of Paper doc.
+public_sharing_policy SharingPublicPolicyType? This value applies to the non-team members. This field is optional.
+SharingPublicPolicyType (union)
+The value will be one of the following datatypes:
+people_with_link_can_edit Void Users who have a link to this doc can edit it.
+people_with_link_can_view_and_comment Void Users who have a link to this doc can view and comment on it.
+invite_only Void Users must be explicitly invited to this doc.
+disabled Void Value used to indicate that doc sharing is enabled only within team.
+team_sharing_policy SharingTeamPolicyType? This value applies to the team members only. The value is null for all personal accounts. This field is optional.
+SharingTeamPolicyType (union)
+The sharing policy type of the Paper doc. The value will be one of the following datatypes:
+people_with_link_can_edit Void Users who have a link to this doc can edit it.
+people_with_link_can_view_and_comment Void Users who have a link to this doc can view and comment on it.
+invite_only Void Users must be explicitly invited to this doc.
+*/
+
+function db2_docs_sharing_policy_get pAccessToken,pDocID
+  local tHeader,tPost,tUrl
+   put db2_docs_sharing_policy_get_HEADER(pAccessToken) into tHeader
+   put db2_docs_sharing_policy_get_POST(pFilterBy,pSortBy,pSortOrder,pLimit) into tPost
+   put db2_docs_sharing_policy_get_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_sharing_policy_get
+
+/**
+db2_docs_sharing_policy_set pAccessToken,pDocId,pPublicSharingPolicy
+--
+Don't inlcude pTeamSharingPolicy
+Description
+Sets the default sharing policy for the given Paper doc. 
+The  default 'team_sharing_policy' can be changed only by teams, omit this field for personal accounts.
+Note: 'public_sharing_policy' cannot  be set to the value 'disabled' because this setting can be changed only via the team admin console.
+--
+for POST
+{"doc_id": "uaSvRuxvnkFa12PTkBv5q","sharing_policy": {
+"public_sharing_policy": "people_with_link_can_edit"}}
+--
+--don't include team sharing which would look like:
+{"doc_id": "uaSvRuxvnkFa12PTkBv5q","sharing_policy": {
+"public_sharing_policy": "people_with_link_can_edit",
+"team_sharing_policy": "people_with_link_can_edit"}}
+--
+PaperDocSharingPolicy
+#--doc_id String The Paper doc ID.
+#--sharing_policy SharingPolicy The default sharing policy to be set for the Paper doc.
+SharingPolicy
+Sharing policy of Paper doc.
+#--#--public_sharing_policy SharingPublicPolicyType? This value applies to the non-team members. This field is optional.
+SharingPublicPolicyType (union)
+The value will be one of the following datatypes:
+#--#--#--people_with_link_can_edit Void Users who have a link to this doc can edit it.
+#--#--#--people_with_link_can_view_and_comment Void Users who have a link to this doc can view and comment on it.
+#--#--#--invite_only Void Users must be explicitly invited to this doc.
+#--#--#--disabled Void Value used to indicate that doc sharing is enabled only within team.
+#--#--team_sharing_policy SharingTeamPolicyType? This value applies to the team members only. The value is null for all personal accounts. This field is optional.
+SharingTeamPolicyType (union)
+The sharing policy type of the Paper doc. The value will be one of the following datatypes:
+#--#--#--people_with_link_can_edit Void Users who have a link to this doc can edit it.
+#--#--#--people_with_link_can_view_and_comment Void Users who have a link to this doc can view and comment on it.
+#--#--#--invite_only Void Users must be explicitly invited to this doc.
+--
+Returns
+No return values. 
+*/
+
+function db2_docs_sharing_policy_set pAccessToken,pDocId,pPublicSharingPolicy
+   local tHeader,tPost,tUrl
+   put db2_docs_sharing_policy_set_HEADER(pAccessToken) into tHeader
+   put db2_docs_sharing_policy_set_POST(pDocId,pPublicSharingPolicy) into tPost
+   put db2_docs_sharing_policy_set_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_sharing_policy_set
+
+/**
+db2_docs_update pAccessToken,pDocID,pDocUpdatePolicy,pRevision,pImportFormat,pData
+--
+Description
+Updates an existing Paper doc with the provided content. 
+--
+for POST
+{"doc_id": "uaSvRuxvnkFa12PTkBv5q",
+"doc_update_policy": "prepend",
+"revision": 56556,
+"import_format": "plain_text"}
+--
+PaperDocUpdateArgs
+#--doc_id String 
+The Paper doc ID.
+#--doc_update_policy PaperDocUpdatePolicy 
+The policy used for the current update call.
+PaperDocUpdatePolicy (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--append Void 
+The content will be appended to the doc.
+#--#--prepend Void 
+The content will be prepended to the doc.
+Note: the doc title will not be affected.
+#--#--overwrite_all Void 
+The document will be overwitten at the head with the provided content.
+#--revision Int64 
+The latest doc revision. This value must match the head revision or an error code will be returned. This is to prevent colliding writes.
+#--import_format ImportFormat 
+The format of provided data.
+ImportFormat (open union)
+The import format of the incoming data. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--html Void The provided data is interpreted as standard HTML.
+#--#--markdown Void The provided data is interpreted as markdown.
+Note: The first line of the provided document will be used as the doc title.
+#--#--plain_text Void The provided data is interpreted as plain text.
+Note: The first line of the provided document will be used as the doc title.
+--
+Returns
+PaperDocCreateUpdateResult
+doc_id String Doc ID of the newly created doc.
+revision Int64 The Paper doc revision. Simply an ever increasing number.
+title String The Paper doc title.
+*/
+
+function db2_docs_update pAccessToken,pDocID,pDocUpdatePolicy,pRevision,pImportFormat,pData
+   local tHeader,tPost,tUrl
+   put db2_docs_update_HEADER(pAccessToken,pDocID,pDocUpdatePolicy,pRevision,pImportFormat) into tHeader
+   put db2_docs_update_POST(pData) into tPost
+   put db2_docs_update_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_update
+
+/**
+db2_docs_users_add pAccessToken
+--
+Description
+Allows an owner or editor to add users to a Paper doc or change their permissions using their email address or Dropbox account ID.
+Note: The Doc owner's permissions cannot be changed. 
+--
+pMemberArray[1][selector]  =email   or   dropbox_id
+pMemberArray[1][member]   =me@myemail.com     or   dbid:......
+pMemberArray[1][permissionlevel]   =edit   or    view_and_comment
+--
+for POST
+{"doc_id": "Tqc33wHI46s1oo4U1teWx",
+"members": [{"member": {".tag": "email","email": "me@myemail.com"},"permission_level": "edit"}],
+"custom_message": "Welcome to Paper.","quiet": false}
+--
+AddPaperDocUser
+#--doc_id String 
+The Paper doc ID.
+#--members List of (AddMember, max_items=20) 
+User which should be added to the Paper doc. Specify only email address or Dropbox account ID.
+AddMember
+#--#--member MemberSelector 
+User which should be added to the Paper doc. Specify only email address or Dropbox account ID.
+MemberSelector (open union)
+Includes different ways to identify a member of a shared folder. 
+This datatype comes from an imported namespace originally defined in the sharing namespace. 
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--dropbox_id String(min_length=1) Dropbox account, team member, or group ID of member.
+#--email String(max_length=255, pattern="^['&A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*.[A-Za-z]{2,15}$") E-mail address of member.
+#--permission_level PaperDocPermissionLevel Permission for the user. The default for this union is edit.
+PaperDocPermissionLevel (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--edit Void User will be granted edit permissions.
+#--view_and_comment Void User will be granted view and comment permissions.
+#--custom_message String? A personal message that will be emailed to each successfully added member. This field is optional.
+#--quiet Boolean Clients should set this to true if no email message shall be sent to added users. The default for this field is False.
+--
+Returns
+This route returns a list. This means the route can accept a homogenous list of the following types:
+AddPaperDocUserMemberResult
+Per-member result for docs/users/add.
+member MemberSelector One of specified input members.
+MemberSelector (open union)
+Includes different ways to identify a member of a shared folder. This datatype comes from an imported namespace originally defined in the sharing namespace. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+dropbox_id String(min_length=1) Dropbox account, team member, or group ID of member.
+email String(max_length=255, pattern="^['&A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*.[A-Za-z]{2,15}$") E-mail address of member.
+result AddPaperDocUserResult The outcome of the action on this member.
+AddPaperDocUserResult (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+success Void User was successfully added to the Paper doc.
+unknown_error Void Something unexpected happened when trying to add the user to the Paper doc.
+sharing_outside_team_disabled Void The Paper doc can be shared only with team members.
+daily_limit_reached Void The daily limit of how many users can be added to the Paper doc was reached.
+user_is_owner Void Owner's permissions cannot be changed.
+failed_user_data_retrieval Void User data could not be retrieved. Clients should retry.
+permission_already_granted Void This user already has the correct permission to the Paper doc.
+*/
+
+function db2_docs_users_add pAccessToken,pDocID,pMemberArray,pCustomMessage,pQuiet
+   local tHeader,tPost,tUrl
+   put db2_docs_users_add_HEADER(pAccessToken) into tHeader
+   put db2_docs_users_add_POST(pDocID,pMemberArray,pCustomMessage,pQuiet) into tPost
+   put db2_docs_users_add_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_users_add
+
+/**
+db2_docs_users_list pAccessToken,pDocId,pLimit,pFilterBy
+--
+Description
+Lists all users who visited the Paper doc or users with explicit access. This call excludes users who have been removed. 
+The list is sorted by the date of the visit or the share date.
+The list will include both users, the explicitly shared ones as well as those who came in using the Paper url link.
+--
+for POST
+{"doc_id": "Tqc33wHI46s1oo4U1teWx","limit": 100,"filter_by": "shared"}
+--
+ListUsersOnPaperDocArgs
+#--doc_id String 
+The Paper doc ID.
+#--limit Int32 
+Size limit per batch. The maximum number of users that can be retrieved per batch is 1000. Higher value results in invalid arguments error. The default for this field is 1000.
+#--filter_by UserOnPaperDocFilter 
+Specify this attribute if you want to obtain users that have already accessed the Paper doc. The default for this union is shared.
+UserOnPaperDocFilter (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--#--visited Void 
+All users who have visited the Paper doc.
+#--#--shared Void 
+All uses who are shared on the Paper doc. This includes all users who have visited the Paper doc as well as those who have not.
+--
+Returns
+ListUsersOnPaperDocResponse
+invitees List of (InviteeInfoWithPermissionLevel) List of email addresses with their respective permission levels that are invited on the Paper doc.
+InviteeInfoWithPermissionLevel
+invitee InviteeInfo Email address invited to the Paper doc.
+InviteeInfo (open union)
+Information about the recipient of a shared content invitation. This datatype comes from an imported namespace originally defined in the sharing namespace. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+email String(max_length=255, pattern="^['&A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*.[A-Za-z]{2,15}$") E-mail address of invited user.
+permission_level PaperDocPermissionLevel Permission level for the invitee.
+PaperDocPermissionLevel (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+edit Void User will be granted edit permissions.
+view_and_comment Void User will be granted view and comment permissions.
+users List of (UserInfoWithPermissionLevel) List of users with their respective permission levels that are invited on the Paper folder.
+UserInfoWithPermissionLevel
+user UserInfo User shared on the Paper doc.
+UserInfo
+Basic information about a user. Use users.get_account and users.get_account_batch to obtain more detailed information. This datatype comes from an imported namespace originally defined in the sharing namespace.
+account_id String(min_length=40, max_length=40) The account ID of the user.
+same_team Boolean If the user is in the same team as current user.
+team_member_id String? The team member ID of the shared folder member. Only present if same_team is true. This field is optional.
+permission_level PaperDocPermissionLevel Permission level for the user.
+PaperDocPermissionLevel (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+edit Void User will be granted edit permissions.
+view_and_comment Void User will be granted view and comment permissions.
+doc_owner UserInfo The Paper doc owner. This field is populated on every single response.
+UserInfo
+Basic information about a user. Use users.get_account and users.get_account_batch to obtain more detailed information. This datatype comes from an imported namespace originally defined in the sharing namespace.
+account_id String(min_length=40, max_length=40) The account ID of the user.
+same_team Boolean If the user is in the same team as current user.
+team_member_id String? The team member ID of the shared folder member. Only present if same_team is true. This field is optional.
+cursor Cursor Pass the cursor into docs/users/list/continue to paginate through all users. The cursor preserves all properties as specified in the original call to docs/users/list.
+Cursor
+value String The actual cursor value.
+expiration Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? Expiration time of value.
+Some cursors might have expiration time assigned. This is a UTC value after which the cursor is no longer valid and the API starts returning an error. If cursor expires a new one needs to be obtained and pagination needs to be restarted. Some cursors might be short-lived some cursors might be long-lived.
+This really depends on the sorting type and order, e.g.:
+1. on one hand, listing docs created by the user, sorted by the created time ascending will have undefinite expiration because the results cannot change while the iteration is happening. This cursor would be suitable for long term polling.
+2. on the other hand, listing docs sorted by the last modified time will have a very short expiration as docs do get modified very often and the modified time can be changed while the iteration is happening thus altering the results. This field is optional.
+has_more Boolean Will be set to True if a subsequent call with the provided cursor to docs/users/list/continue returns immediately with some results. If set to False please allow some delay before making another call to docs/users/list/continue.
+*/
+
+function db2_docs_users_list pAccessToken,pDocId,pLimit,pFilterBy
+   local tHeader,tPost,tUrl
+   put db2_docs_users_list_HEADER(pAccessToken) into tHeader
+   put db2_docs_users_list_POST(pDocId,pLimit,pFilterBy) into tPost
+   put db2_docs_users_list_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_users_list
+
+/**
+db2_docs_users_list_continue pAccessToken,pDocID,pCursor
+--
+Description
+Once a cursor has been retrieved from docs/users/list, use this to paginate through all users on the Paper doc. 
+--
+for POST
+{"doc_id": "Tqc33wHI46s1oo4U1teWx","cursor": "AA6u4s/z3kMjcSUkEOQYPQoTSJZ/Atq1ZPk1Psfkyra1ppVljDbHXGxbXh8Q5pMvrBi4TUCMDTDo0E31gY0+nGbN+FALDW35fm1pGcHcqmQrym9GcLG6wrpiY8nfcbR3gGIe05EfCoZKNHAhk4G2RwWuKR7aKp6GsKVNsv17oVfnV/N0pg0MzrWwOr5O2KWDEF5SWHlqwBdxG2fUeHzmdXYjkjVyph+h0byKKYEdFg12FiCreAq3VMVIV4ZFp3bhpxi3Ozy6+gwimNZll79ovEDAJdD2uCVKYwTUQvaDYmwlFQ=="}
+--
+ListUsersOnPaperDocContinueArgs
+#--doc_id String The Paper doc ID.
+#--cursor String The cursor obtained from docs/users/list or docs/users/list/continue. Allows for pagination.
+--
+Returns
+ListUsersOnPaperDocResponse
+invitees List of (InviteeInfoWithPermissionLevel) List of email addresses with their respective permission levels that are invited on the Paper doc.
+InviteeInfoWithPermissionLevel
+invitee InviteeInfo Email address invited to the Paper doc.
+InviteeInfo (open union)
+Information about the recipient of a shared content invitation. This datatype comes from an imported namespace originally defined in the sharing namespace. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+email String(max_length=255, pattern="^['&A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*.[A-Za-z]{2,15}$") E-mail address of invited user.
+permission_level PaperDocPermissionLevel Permission level for the invitee.
+PaperDocPermissionLevel (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+edit Void User will be granted edit permissions.
+view_and_comment Void User will be granted view and comment permissions.
+users List of (UserInfoWithPermissionLevel) List of users with their respective permission levels that are invited on the Paper folder.
+UserInfoWithPermissionLevel
+user UserInfo User shared on the Paper doc.
+UserInfo
+Basic information about a user. Use users.get_account and users.get_account_batch to obtain more detailed information. This datatype comes from an imported namespace originally defined in the sharing namespace.
+account_id String(min_length=40, max_length=40) The account ID of the user.
+same_team Boolean If the user is in the same team as current user.
+team_member_id String? The team member ID of the shared folder member. Only present if same_team is true. This field is optional.
+permission_level PaperDocPermissionLevel Permission level for the user.
+PaperDocPermissionLevel (open union)
+The value will be one of the following datatypes. New values may be introduced as our API evolves.
+edit Void User will be granted edit permissions.
+view_and_comment Void User will be granted view and comment permissions.
+doc_owner UserInfo The Paper doc owner. This field is populated on every single response.
+UserInfo
+Basic information about a user. Use users.get_account and users.get_account_batch to obtain more detailed information. This datatype comes from an imported namespace originally defined in the sharing namespace.
+account_id String(min_length=40, max_length=40) The account ID of the user.
+same_team Boolean If the user is in the same team as current user.
+team_member_id String? The team member ID of the shared folder member. Only present if same_team is true. This field is optional.
+cursor Cursor Pass the cursor into docs/users/list/continue to paginate through all users. The cursor preserves all properties as specified in the original call to docs/users/list.
+Cursor
+value String The actual cursor value.
+expiration Timestamp(format="%Y-%m-%dT%H:%M:%SZ")? Expiration time of value.
+Some cursors might have expiration time assigned. This is a UTC value after which the cursor is no longer valid and the API starts returning an error. If cursor expires a new one needs to be obtained and pagination needs to be restarted. Some cursors might be short-lived some cursors might be long-lived.
+This really depends on the sorting type and order, e.g.:
+1. on one hand, listing docs created by the user, sorted by the created time ascending will have undefinite expiration because the results cannot change while the iteration is happening. This cursor would be suitable for long term polling.
+2. on the other hand, listing docs sorted by the last modified time will have a very short expiration as docs do get modified very often and the modified time can be changed while the iteration is happening thus altering the results. This field is optional.
+has_more Boolean Will be set to True if a subsequent call with the provided cursor to docs/users/list/continue returns immediately with some results. If set to False please allow some delay before making another call to docs/users/list/continue.
+*/
+
+function db2_docs_users_list_continue pAccessToken,pDocID,pCursor
+  local tHeader,tPost,tUrl
+   put db2_docs_users_list_continue_HEADER(pAccessToken) into tHeader
+   put db2_docs_users_list_continue_POST(pDocID,pCursor) into tPost
+   put db2_docs_users_list_continue_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_users_list_continue
+
+/**
+db2_docs_users_remove pAccessToken,pDocID,pMemberSelector,pMember
+--
+Description
+Allows an owner or editor to remove users from a Paper doc using their email address or Dropbox account ID.
+Note: Doc owner cannot be removed.
+--
+for POST
+{"doc_id": "Tqc33wHI46s1oo4U1teWx","member": {".tag": "email","email": "me@myemail.com"}}
+--
+RemovePaperDocUser
+#--doc_id String The Paper doc ID.
+#--member MemberSelector User which should be removed from the Paper doc. Specify only email address or Dropbox account ID.
+MemberSelector (open union)
+Includes different ways to identify a member of a shared folder. This datatype comes from an imported namespace originally defined in the sharing namespace. The value will be one of the following datatypes. New values may be introduced as our API evolves.
+#--dropbox_id String(min_length=1) Dropbox account, team member, or group ID of member.
+#--email String(max_length=255, pattern="^['&A-Za-z0-9._%+-]+@[A-Za-z0-9-][A-Za-z0-9.-]*.[A-Za-z]{2,15}$") E-mail address of member.
+--
+Returns
+No return values. 
+*/
+
+function db2_docs_users_remove pAccessToken,pDocID,pMemberSelector,pMember
+  local tHeader,tPost,tUrl
+   put db2_docs_users_remove_HEADER(pAccessToken) into tHeader
+   put db2_docs_users_remove_POST(pDocID,pMemberSelector,pMember) into tPost
+   put db2_docs_users_remove_URL() into tUrl
+   return db2_API2(tHeader,tPost,tUrl)
+end db2_docs_users_remove
 
 -----------------------------------------------------------------------------
 -----------sharing---------------------------------------------------------
@@ -5092,9 +5457,92 @@ end db2_upload_session_start_HEADER
 ------paper-----------------------------------------------
 ----------------------------------------------------------------
 
+function db2_docs_archive_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_archive_HEADER
+
+function db2_docs_create_HEADER pAccessToken,pImportFormat,pParentFolderID
+   return db2_Header_AuthOctet(pAccessToken) & cr & db2_Header_APIDocsCreate(pImportFormat,pParentFolderID)
+end db2_docs_create_HEADER
+
+function db2_Header_APIDocsCreate pImportFormat,pParentFolderID
+   if pParentFolderID is empty then 
+      return "Dropbox-API-Arg: " & db2_CB(db2_Q("import_format") & ": " & db2_Q(pImportFormat))
+   else
+      return "Dropbox-API-Arg: " & db2_CB(db2_Q("import_format") & ": " & db2_Q(pImportFormat) & "," &  \
+            db2_Q("parent_folder_id") & ": " & db2_Q(pParentFolderID))
+   end if
+end db2_Header_APIDocsCreate
+
+function db2_Header_APIDocsDownload pDocID,pExportFormat
+   return "Dropbox-API-Arg: " & db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID) & "," &  \
+         db2_Q("export_format") & ": " & db2_Q(pExportFormat))
+end db2_Header_APIDocsDownload
+
+function db2_docs_download_HEADER pAccessToken,pDocID,pExportFormat
+   return db2_Header_Standard(pAccessToken) & cr & db2_Header_APIDocsDownload(pDocID,pExportFormat)
+end db2_docs_download_HEADER
+
+function db2_docs_folder_users_list_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_folder_users_list_HEADER
+
+function db2_docs_folder_users_list_continue_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_folder_users_list_continue_HEADER
+
+function db2_docs_get_folder_info_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_get_folder_info_HEADER
+
 function db2_docs_list_HEADER pAccessToken
    return db2_Header_Standard(pAccessToken)
 end db2_docs_list_HEADER
+
+function db2_docs_list_continue_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_list_continue_HEADER
+
+function db2_docs_permanently_delete_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_permanently_delete_HEADER
+
+function db2_docs_sharing_policy_get_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_sharing_policy_get_HEADER
+
+function db2_docs_sharing_policy_set_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_sharing_policy_set_HEADER
+
+function db2_docs_update_HEADER pAccessToken,pDocID,pDocUpdatePolicy,pRevision,pImportFormat
+   return db2_Header_AuthOctet(pAccessToken) & cr & db2_Header_APIDocsUpdate(pDocID,pDocUpdatePolicy,pRevision,pImportFormat)
+end db2_docs_update_HEADER
+
+function db2_Header_APIDocsUpdate pDocID,pDocUpdatePolicy,pRevision,pImportFormat
+   return "Dropbox-API-Arg: " &  \
+         db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID) & "," &  \
+         db2_Q("doc_update_policy") & ": " & db2_Q(pDocUpdatePolicy) & "," &  \
+         db2_Q("revision") & ": " & pRevision & "," &  \
+         db2_Q("import_format") & ": " & pImportFormat)
+end db2_Header_APIDocsUpdate
+
+function db2_docs_users_add_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_users_add_HEADER
+
+function db2_docs_users_list_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_users_list_HEADER
+
+function db2_docs_users_list_continue_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_users_list_continue_HEADER
+
+function db2_docs_users_remove_HEADER pAccessToken
+   return db2_Header_Standard(pAccessToken)
+end db2_docs_users_remove_HEADER
+
 
 ----------------------------------------------------------------
 ------sharing-----------------------------------------------
@@ -5519,9 +5967,69 @@ end db2_upload_session_start_URL
 ------paper-----------------------------------------------
 ----------------------------------------------------------------
 
+function db2_docs_archive_URL
+   return "https://api.dropboxapi.com/2/paper/docs/archive"
+end db2_docs_archive_URL 
+
+function db2_docs_create_URL
+   return "https://api.dropboxapi.com/2/paper/docs/create"
+end db2_docs_create_URL 
+
+function db2_docs_download_URL
+   return "https://api.dropboxapi.com/2/paper/docs/download"
+end db2_docs_download_URL 
+
+function db2_docs_folder_users_list_URL
+   return "https://api.dropboxapi.com/2/paper/docs/folder_users/list"
+end db2_docs_folder_users_list_URL 
+
+function db2_docs_folder_users_list_continue_URL
+   return "https://api.dropboxapi.com/2/paper/docs/folder_users/list/continue"
+end db2_docs_folder_users_list_continue_URL 
+
+function db2_docs_get_folder_info_URL
+   return "https://api.dropboxapi.com/2/paper/docs/get_folder_info"
+end db2_docs_get_folder_info_URL 
+
 function db2_docs_list_URL
-   return "https://api.dropboxapi.com/2/paper/docs/list"
-end db2_docs_list_URL 
+    return "https://api.dropboxapi.com/2/paper/docs/list"
+ end db2_docs_list_URL 
+
+function db2_docs_list_continue_URL
+ return "https://api.dropboxapi.com/2/paper/docs/list/continue"
+end db2_docs_list_continue_URL 
+
+function db2_docs_permanently_delete_URL
+   return "https://api.dropboxapi.com/2/paper/docs/permanently_delete"
+end db2_docs_permanently_delete_URL 
+
+function db2_docs_sharing_policy_get_URL
+   return "https://api.dropboxapi.com/2/paper/docs/sharing_policy/get"
+end db2_docs_sharing_policy_get_URL 
+
+function db2_docs_sharing_policy_set_URL
+   return "https://api.dropboxapi.com/2/paper/docs/sharing_policy/set"
+end db2_docs_sharing_policy_set_URL 
+
+function db2_docs_update_URL
+   return "https://api.dropboxapi.com/2/paper/docs/update"
+end db2_docs_update_URL 
+
+function db2_docs_users_add_URL
+   return "https://api.dropboxapi.com/2/paper/docs/users/add"
+end db2_docs_users_add_URL 
+
+function db2_docs_users_list_URL
+   return "https://api.dropboxapi.com/2/paper/docs/users/list"
+end db2_docs_users_list_URL 
+
+function db2_docs_users_list_continue_URL
+   return "https://api.dropboxapi.com/2/paper/docs/users/list/continue"
+end db2_docs_users_list_continue_URL 
+
+function db2_docs_users_remove_URL
+   return "https://api.dropboxapi.com/2/paper/docs/users/remove"
+end db2_docs_users_remove_URL 
 
 ----------------------------------------------------------------
 ---------sharing---------------------------------------------
@@ -5693,10 +6201,12 @@ end db2_update_folder_policy_URL
 -------auth--------------------------------------------------------------
 -----------------------------------------------------------------------------
 
+/*
+db2_token_revoke_POST
+No parameters. Null used in https://dropbox.github.io/dropbox-api-v2-explorer/#auth_token/revoke
+*/
+
 function db2_token_revoke_POST
-   /*
-   No parameters. Null used in https://dropbox.github.io/dropbox-api-v2-explorer/#auth_token/revoke
-   */
    return "null"
 end db2_token_revoke_POST
 
@@ -5718,7 +6228,6 @@ end db2_get_account_batch_POST
 
 /*
 db2_get_current_account_POST
---
 No parameters. Null required; empty value fails. See https://dropbox.github.io/dropbox-api-v2-explorer/#users_get_current_account
 */
 
@@ -5728,7 +6237,6 @@ end db2_get_current_account_POST
 
 /*
 db2_get_space_usage_POST
---
 No parameters. Null required; empty value fails. See https://dropbox.github.io/dropbox-api-v2-explorer/#users_get_space_usage
 */
 
@@ -5752,7 +6260,6 @@ end db2_get_POST
 
 /*
 db2_list_POST
---
 No parameters. Null is used at https://dropbox.github.io/dropbox-api-v2-explorer/#file_requests_list
 */
 
@@ -5762,7 +6269,6 @@ end db2_list_POST
 
 /*
 db2_update_POST pRequestID,pTitle,pDestination,pOpenBoolean
---
 omit optional fields; don't implement deadline which requires Business
 */
 
@@ -5806,7 +6312,6 @@ end db2_get_metadata_POST
 
 /*
 db2_upload_POST pData
---
 data-binary @local_file.png
 */
 
@@ -5848,7 +6353,6 @@ end db2_properties_update_POST
 
 /*
 db2_properties_search_POST pQueryText,pQueryField,pQueryMode,pLogicalOperator,pFilterTemplateIDs
---
 Only one search query is implemented here 
 To implement multiple queries need to have an array of first 4 params: text, filed, mode, logical operators
 --default filternone
@@ -5899,7 +6403,6 @@ end db2_templates_get_for_user_POST
 
 /*
 db2_templates_list_for_user_POST
---
 No parameters. Null used in https://dropbox.github.io/dropbox-api-v2-explorer/#file_properties_templates/list_for_user
 */ 
 
@@ -5912,11 +6415,10 @@ function db2_templates_remove_for_user_POST pTemplateID
 end db2_templates_remove_for_user_POST
 
 /*
- db2_templates_update_for_user_POST pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray
---
- add_fields: although documentation says it is optional; seems to require empty list to function
- */
- 
+db2_templates_update_for_user_POST pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray
+add_fields: although documentation says it is optional; seems to require empty list to function
+*/
+
 function db2_templates_update_for_user_POST pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray
    local tString
    put db2_Q("template_id") & ": " & db2_Q(pTemplateID) into tString
@@ -5949,12 +6451,14 @@ function db2_list_folder_longpoll_POST pCursor,pTimeout
      return db2_CB(db2_Q("cursor") & ": " & db2_Q(pCursor) & "," & db2_Q("timeout") & ": " & pTimeout)
 end db2_list_folder_longpoll_POST
 
+/*
+db2_list_folder_POST pPath,pRecursive,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,IncludeMountedFolders,pLimit,pIncludePropertyTemplateIDs
+#--shared_link parameter not implemented here
+#--#--url String Shared link url.
+#--#--password String? Password for the shared link. This field is optional.
+*/
+
 function db2_list_folder_POST pPath,pRecursive,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,IncludeMountedFolders,pLimit,pIncludePropertyTemplateIDs
-   /*
-   #--shared_link parameter not implemented here
-   #--#--url String Shared link url.
-   #--#--password String? Password for the shared link. This field is optional.
-   */
    if pRecursive is empty then put "False" into pRecursive
    if pIncludeMediaInfo is empty then put "False" into pIncludeMediaInfo
    if pIncludeDeleted is empty then put "False" into pIncludeDeleted
@@ -5982,11 +6486,9 @@ end db2_list_folder_continue_POST
 
 /*
 db2_list_folder_get_latest_cursor_POST pPath,pRecursive,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,IncludeMountedFolders,pLimit,pIncludePropertyTemplateIDs
---
 #--shared_link parameter not implemented here
 #--#--url String Shared link url.
 #--#--password String? Password for the shared link. This field is optional.
---
 if pLimit is empty then put "50" into pLimit  --50 chosen arbitrarily; need integer not empty string; range 1 to 2000
 */
 
@@ -6031,18 +6533,18 @@ function db2_download_zip_POST
 end db2_download_zip_POST
 
 /*
-  db2_upload_session_start_POST pData
-  data-binary @local_file.png
-   */
+db2_upload_session_start_POST pData
+data-binary @local_file.png
+*/
 
 function db2_upload_session_start_POST pData
    return pData
 end db2_upload_session_start_POST
 
-  /*
- db2_upload_session_append_v2_POST pData
-   data-binary @local_file.png
-   */
+/*
+db2_upload_session_append_v2_POST pData
+data-binary @local_file.png
+*/
 
 function db2_upload_session_append_v2_POST pData
    return pData
@@ -6262,9 +6764,130 @@ end db2_restore_POST
 ------paper-----------------------------------------------
 ----------------------------------------------------------------
 
-function db2_docs_list_POST pFilterBy,pSortBy,pSortOrder,pLimit
+function db2_docs_archive_POST pDocID
+ return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID))
+end db2_docs_archive_POST
+
+/*
+db2_docs_create_POST
+Binary data
+*/
+
+function db2_docs_create_POST pData
+   return pData
+end db2_docs_create_POST
+
+/*
+db2_get_preview_POST
+No parameters. Parameters in header instead. Must be empty POST
+*/
+
+function db2_docs_download_POST 
    return ""
+end db2_docs_download_POST
+
+function db2_docs_folder_users_list_POST pDocID,pLimit
+   if pLimit is empty then put "1000" into pLimit
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID) & "," &  \
+         db2_Q("limit") & ": " & db2_Q(pLimit))
+end db2_docs_folder_users_list_POST
+
+function db2_docs_folder_users_list_continue_POST pDocID,pCursor
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID) & "," &  \
+         db2_Q("cursor") & ": " & db2_Q(pCursor))
+end db2_docs_folder_users_list_continue_POST
+
+function db2_docs_get_folder_info_POST pDocID
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID))
+end db2_docs_get_folder_info_POST
+
+function db2_docs_list_POST pFilterBy,pSortBy,pSortOrder,pLimit
+   if pFilterBy is empty then put "docs_accessed" into pFilterBy
+   if pSortBy is empty then put "accessed" into pSortBy
+   if pSortOrder is empty then put "ascending" into pSortOrder
+   if pLimit is empty then put "1000" into pLimit
+   return db2_CB(db2_Q("filter_by") & ": " & db2_Q(pFilterBy) & "," &  \
+         db2_Q("sort_by") & ": " & db2_Q(pSortBy) & "," &  \
+         db2_Q("sort_order") & ": " & db2_Q(pSortOrder) & "," &  \
+         db2_Q("limit") & ": " & db2_Q(pLimit))
 end db2_docs_list_POST
+
+function db2_docs_list_continue_POST pCursor
+   return db2_CB(db2_Q("cursor") & ": " & db2_Q(pCursor))
+end db2_docs_list_continue_POST
+
+function db2_docs_permanently_delete_POST p
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID))
+end db2_docs_permanently_delete_POST
+
+function db2_docs_sharing_policy_get_POST pDocID
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID))
+end db2_docs_sharing_policy_get_POST
+
+function db2_docs_sharing_policy_set_POST pDocId,pPublicSharingPolicy
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocId) & "," &  \
+         db2_Q("sharing_policy") & ": " & db2_CB(db2_Q("public_sharing_policy") & ": " & db2_Q(pPublicSharingPolicy)))
+end db2_docs_sharing_policy_set_POST
+
+function db2_docs_update_POST pData
+   return pData
+end db2_docs_update_POST
+
+/*
+db2_docs_users_add_POST pDocID,pMemberArray,pCustomMessage,pQuiet
+pMemberArray[1][selector]
+pMemberArray[1][member]
+pMemberArray[1][permissionlevel]
+--
+for POST
+{"doc_id": "uaSvRuxvnkFa12PTkBv5q",
+"members": [{"member": {".tag": "email","email": "justin@example.com"},"permission_level": "view_and_comment"}],
+"custom_message": "Welcome to Paper.","quiet": false}
+*/
+
+function db2_docs_users_add_POST pDocID,pMemberArray,pCustomMessage,pQuiet
+   if pQuiet is empty then put "false" into pQuiet
+   --
+   put empty into tMembersString
+   repeat for each key rKey in pMemberArray
+      put db2_CB(db2_Q("member") & ":" &  \
+            db2_CB(db2_Q(".tag") & ":" & db2_Q(pMemberArray[rKey]["selector"]) & "," &  \
+            db2_Q(pMemberArray[rKey]["selector"]) & ":" & db2_Q(pMemberArray[rKey]["member"])) & "," & \
+            db2_Q("permission_level") & ":" & db2_Q(pMemberArray[rKey]["permissionlevel"])) & "," after tMembersString
+   end repeat
+   if last char of tMembersString is comma then delete last char of tMembersString
+   --
+   if pCustomMessage is not empty then
+      return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocId) & "," &  \
+            db2_Q("members") & ": " & db2_SB(tMembersString) & "," &  \
+            db2_Q("custom_message") & ": " & db2_Q(pCustomMessage) & "," &  \
+            db2_Q("quiet") & ": " & db2_Q(pQuiet))
+   else
+      return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocId) & "," &  \
+            db2_Q("members") & ": " & db2_SB(tMembersString) & "," &  \
+            db2_Q("quiet") & ": " & db2_Q(pQuiet))
+   end if
+end db2_docs_users_add_POST
+
+function db2_docs_users_list_POST pDocId,pLimit,pFilterBy
+   if pFilterBy is empty then put "shared" into pFilterBy
+   if pLimit is empty then put "1000" into pLimit
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocId) & "," &  \
+         db2_Q("limit") & ": " & db2_Q(pLimit) & "," &  \
+         db2_Q("filter_by") & ": " & db2_Q(pFilterBy))
+end db2_docs_users_list_POST
+
+function db2_docs_users_list_continue_POST pDocID,pCursor
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocID) & "," &  \
+         db2_Q("cursor") & ": " & db2_Q(pCursor))
+end db2_docs_users_list_continue_POST
+
+function db2_docs_users_remove_POST pDocID,pMemberSelector,pMember
+   return db2_CB(db2_Q("doc_id") & ": " & db2_Q(pDocId) & "," &  \
+         db2_Q("member") & ":" &  \
+         db2_CB(db2_Q(".tag") & ":" & db2_Q(pMemberSelector) & "," &  \
+         db2_Q(pMemberSelector) & ":" & db2_Q(pMember)))
+end db2_docs_users_remove_POST
 
 ----------------------------------------------------------------
 ---------sharing-----------------------------------------
