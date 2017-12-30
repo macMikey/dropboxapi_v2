@@ -6305,16 +6305,17 @@ function db2_get_metadata_POST pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeH
    if pIncludeDeleted is empty then put "false" into pIncludeDeleted
    if pIncludeHasExplicitSharedMembers is empty then put "false" into pIncludeHasExplicitSharedMembers
    if pIncludePropertyTemplateIDs is empty then
-      return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) &  \
-            "," & db2_Q("include_media_info") & ": " & pIncludeMediaInfo & \
-            "," & db2_Q("include_deleted") & ": " & pIncludeDeleted & \
-            "," & db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers)
+      return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," &  \
+            db2_Q("include_media_info") & ": " & pIncludeMediaInfo & "," &  \
+            db2_Q("include_deleted") & ": " & pIncludeDeleted & "," &  \
+            db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers)
    else
-      return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & \
-            "," & db2_Q("include_media_info") & ": " & pIncludeMediaInfo & \
-            "," & db2_Q("include_deleted") & ": " & pIncludeDeleted & \
-            "," & db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers& \
-            "," & db2_Q("include_property_groups") & ":" & db2_CB(db2_Q(".tag") & ":" & db2_Q("filter_some") & "," & db2_Q("filter_some") & ":" & \
+      return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," &  \
+            db2_Q("include_media_info") & ": " & pIncludeMediaInfo & "," &  \
+            db2_Q("include_deleted") & ": " & pIncludeDeleted & "," &  \
+            db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers & "," &  \
+            db2_Q("include_property_groups") & ":" & db2_CB(db2_Q(".tag") & ":" &  \
+            db2_Q("filter_some") & "," & db2_Q("filter_some") & ":" & \
             db2_SBQListFromCRList(pIncludePropertyTemplateIDs)))
    end if
 end db2_get_metadata_POST
@@ -6349,10 +6350,12 @@ function db2_properties_overwrite_POST pPath,pPropertyGroupsArray
 end db2_properties_overwrite_POST
 
 function db2_properties_remove_POST pPath,pTemplateIDs
-    if pTemplateIDs is empty then 
-      return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," & db2_Q("property_template_ids") & ": " & db2_SB())
+   if pTemplateIDs is empty then 
+      return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," &  \
+            db2_Q("property_template_ids") & ": " & db2_SB())
    else
-      return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," & db2_Q("property_template_ids") & ": " & db2_SBQListFromCRList(pTemplateIDs))
+      return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," &  \
+      db2_Q("property_template_ids") & ": " & db2_SBQListFromCRList(pTemplateIDs))
    end if
 end db2_properties_remove_POST
 
@@ -6484,7 +6487,7 @@ function db2_list_folder_POST pPath,pRecursive,pIncludeMediaInfo,pIncludeDeleted
             db2_Q("include_media_info") & ": " & pIncludeMediaInfo & "," & db2_Q("include_deleted") & ": " & pIncludeDeleted & "," &  \
             db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers & "," &  \
             db2_Q("include_mounted_folders") & ": " & IncludeMountedFolders & "," & db2_Q("pLimit") & ": " & pLimit & "," &  \      
-            db2_Q("include_property_templates") & ":" & db2_CB(db2_Q(".tag") & ":" & db2_Q("filter_some") & "," & db2_Q("filter_some") & ":" & \
+            db2_Q("include_property_groups") & ":" & db2_CB(db2_Q(".tag") & ":" & db2_Q("filter_some") & "," & db2_Q("filter_some") & ":" & \
             db2_SBQListFromCRList(pIncludePropertyTemplateIDs)))
    end if
 end db2_list_folder_POST
@@ -6518,7 +6521,7 @@ function db2_list_folder_get_latest_cursor_POST pPath,pRecursive,pIncludeMediaIn
             db2_Q("include_media_info") & ": " & pIncludeMediaInfo & "," & db2_Q("include_deleted") & ": " & pIncludeDeleted & "," &  \
             db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers & "," &  \
             db2_Q("include_mounted_folders") & ": " & IncludeMountedFolders & "," & db2_Q("pLimit") & ": " & pLimit & "," &  \      
-            db2_Q("include_property_templates") & ":" & db2_CB(db2_Q(".tag") & ":" & db2_Q("filter_some") & "," & db2_Q("filter_some") & ":" & \
+            db2_Q("include_property_groups") & ":" & db2_CB(db2_Q(".tag") & ":" & db2_Q("filter_some") & "," & db2_Q("filter_some") & ":" & \
             db2_SBQListFromCRList(pIncludePropertyTemplateIDs)))
    end if
 end db2_list_folder_get_latest_cursor_POST
@@ -7003,7 +7006,7 @@ function db2_list_file_members_POST pFile,pActions,pIncludeInherited,pLimit
    return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," & db2_Q("include_media_info") & ": " & pIncludeMediaInfo & \
          "," & db2_Q("include_deleted") & ": " & pIncludeDeleted & \
          "," & db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers)
-   --& "," & db2_Q("include_property_templates") & ": " & pIncludePropertyTemplates)
+   --& "," & db2_Q("include_property_groups") & ": " & pIncludePropertyTemplates)
    
    
    return "null"
@@ -7776,7 +7779,7 @@ end db2_B
 
 function db2_SBQListFromCRList pLineList
    replace cr with quote & comma & quote in pLineList
-    return db2_SB(quote & pLineList & quote)
+   return db2_SB(quote & pLineList & quote)
 end db2_SBQListFromCRList
 
 -----------------------------------------------------------------------------
