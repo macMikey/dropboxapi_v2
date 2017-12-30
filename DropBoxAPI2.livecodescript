@@ -6314,7 +6314,7 @@ function db2_get_metadata_POST pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeH
             "," & db2_Q("include_media_info") & ": " & pIncludeMediaInfo & \
             "," & db2_Q("include_deleted") & ": " & pIncludeDeleted & \
             "," & db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers& \
-            "," & db2_Q("include_property_templates") & ":" & db2_CB(db2_Q(".tag") & ":" & db2_Q("filter_some") & "," & db2_Q("filter_some") & ":" & \
+            "," & db2_Q("include_property_groups") & ":" & db2_CB(db2_Q(".tag") & ":" & db2_Q("filter_some") & "," & db2_Q("filter_some") & ":" & \
             db2_SBQListFromCRList(pIncludePropertyTemplateIDs)))
    end if
 end db2_get_metadata_POST
