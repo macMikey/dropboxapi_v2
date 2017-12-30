@@ -710,9 +710,9 @@ UpdateTemplateResult
 
 function db2_templates_update_for_user pAccessToken,pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray
    local tHeader,tPost,tUrl
-   put db2_templates_list_for_user_HEADER(pAccessToken) into tHeader
-   put db2_templates_list_for_user_POST(pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray) into tPost
-   put db2_templates_list_for_user_URL() into tUrl
+   put db2_templates_update_for_user_HEADER(pAccessToken) into tHeader
+   put db2_templates_update_for_user_POST(pTemplateID,pTemplateName,pTemplateDescription,pFieldsArray) into tPost
+   put db2_templates_update_for_user_URL() into tUrl
    return db2_API2(tHeader,tPost,tUrl)
 end db2_templates_update_for_user
 
