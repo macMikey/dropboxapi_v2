@@ -5429,8 +5429,8 @@ end db2_search_HEADER
 
 function db2_upload_HEADER pAccessToken,pPath,pMode,pAutorename,pClientModified,pMute,pPropertyGroupsArray
    if pMode is empty then put "add" into pMode
-   if pAutorename is empty then put "False" into pAutorename
-   if pMute is empty then put "False" into pMute
+   if pAutorename is empty then put "false" into pAutorename
+   if pMute is empty then put "false" into pMute
    return db2_Header_AuthOctet(pAccessToken) & cr & db2_Header_APIUpload(pPath,pMode,pAutorename,pClientModified,pMute,pPropertyGroupsArray)
 end db2_upload_HEADER
 
@@ -5440,8 +5440,8 @@ end db2_upload_session_append_v2_HEADER
 
 function db2_upload_session_finish_HEADER pAccessToken,pSessionID,pOffset,pPath,pMode,pAutorename,pMute,pClientModified,pPropertyGroupsArray
    if pMode is empty then put "add" into pMode
-   if pAutorename is empty then put "False" into pAutorename
-   if pMute is empty then put "False" into pMute
+   if pAutorename is empty then put "false" into pAutorename
+   if pMute is empty then put "false" into pMute
    return db2_Header_AuthOctet(pAccessToken) & cr & db2_Header_APISessionFinish(pSessionID,pOffset,pPath,pMode,pAutorename,pMute,pClientModified,pPropertyGroupsArray)
 end db2_upload_session_finish_HEADER
 
@@ -6301,9 +6301,9 @@ end db2_update_POST
 -----------------------------------------------------------------------------
 
 function db2_get_metadata_POST pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,pIncludePropertyTemplateIDs
-   if pIncludeMediaInfo is empty then put "False" into pIncludeMediaInfo
-   if pIncludeDeleted is empty then put "False" into pIncludeDeleted
-   if pIncludeHasExplicitSharedMembers is empty then put "False" into pIncludeHasExplicitSharedMembers
+   if pIncludeMediaInfo is empty then put "false" into pIncludeMediaInfo
+   if pIncludeDeleted is empty then put "false" into pIncludeDeleted
+   if pIncludeHasExplicitSharedMembers is empty then put "false" into pIncludeHasExplicitSharedMembers
    if pIncludePropertyTemplateIDs is empty then
       return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) &  \
             "," & db2_Q("include_media_info") & ": " & pIncludeMediaInfo & \
@@ -6406,7 +6406,7 @@ function db2_templates_add_for_user_POST pTemplateName,pTemplateDescription,pFie
          db2_Q("fields") & ": " & db2_FieldsString(pFieldsArray))
 end db2_templates_add_for_user_POST
 
-
+function db2_templates_get_for_user_POST pTemplateID
     return db2_CB(db2_Q("template_id") & ": " & db2_Q(pTemplateID))
 end db2_templates_get_for_user_POST
 
@@ -6449,9 +6449,9 @@ end db2_templates_update_for_user_POST
 ----------------------------------------------------------------
 
 function db2_get_metadata_POST pPath,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers
-   if pIncludeMediaInfo is empty then put "False" into pIncludeMediaInfo
-   if pIncludeDeleted is empty then put "False" into pIncludeDeleted
-   if pIncludeHasExplicitSharedMembers is empty then put "False" into pIncludeHasExplicitSharedMembers
+   if pIncludeMediaInfo is empty then put "false" into pIncludeMediaInfo
+   if pIncludeDeleted is empty then put "false" into pIncludeDeleted
+   if pIncludeHasExplicitSharedMembers is empty then put "false" into pIncludeHasExplicitSharedMembers
    return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," & db2_Q("include_media_info") & ": " & pIncludeMediaInfo& "," &  \
    db2_Q("include_deleted") & ": " & pIncludeDeleted & "," & db2_Q("include_has_explicit_shared_members") & ": " & pIncludeHasExplicitSharedMembers)
 end db2_get_metadata_POST
@@ -6468,10 +6468,10 @@ db2_list_folder_POST pPath,pRecursive,pIncludeMediaInfo,pIncludeDeleted,pInclude
 */
 
 function db2_list_folder_POST pPath,pRecursive,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,IncludeMountedFolders,pLimit,pIncludePropertyTemplateIDs
-   if pRecursive is empty then put "False" into pRecursive
-   if pIncludeMediaInfo is empty then put "False" into pIncludeMediaInfo
-   if pIncludeDeleted is empty then put "False" into pIncludeDeleted
-   if pIncludeHasExplicitSharedMembers is empty then put "False" into pIncludeHasExplicitSharedMembers
+   if pRecursive is empty then put "false" into pRecursive
+   if pIncludeMediaInfo is empty then put "false" into pIncludeMediaInfo
+   if pIncludeDeleted is empty then put "false" into pIncludeDeleted
+   if pIncludeHasExplicitSharedMembers is empty then put "false" into pIncludeHasExplicitSharedMembers
    if IncludeMountedFolders is empty then put "True" into IncludeMountedFolders
    if pLimit is empty then put "1001" into pLimit  --50 chosen arbitrarily; need integer not empty string; range 1 to 2000
    if pIncludePropertyTemplateIDs is empty then
@@ -6502,10 +6502,10 @@ if pLimit is empty then put "50" into pLimit  --50 chosen arbitrarily; need inte
 */
 
 function db2_list_folder_get_latest_cursor_POST pPath,pRecursive,pIncludeMediaInfo,pIncludeDeleted,pIncludeHasExplicitSharedMembers,IncludeMountedFolders,pLimit,pIncludePropertyTemplateIDs
-   if pRecursive is empty then put "False" into pRecursive
-   if pIncludeMediaInfo is empty then put "False" into pIncludeMediaInfo
-   if pIncludeDeleted is empty then put "False" into pIncludeDeleted
-   if pIncludeHasExplicitSharedMembers is empty then put "False" into pIncludeHasExplicitSharedMembers
+   if pRecursive is empty then put "false" into pRecursive
+   if pIncludeMediaInfo is empty then put "false" into pIncludeMediaInfo
+   if pIncludeDeleted is empty then put "false" into pIncludeDeleted
+   if pIncludeHasExplicitSharedMembers is empty then put "false" into pIncludeHasExplicitSharedMembers
    if IncludeMountedFolders is empty then put "True" into IncludeMountedFolders
    if pLimit is empty then put "50" into pLimit
    if pIncludePropertyTemplateIDs is empty then
@@ -6638,7 +6638,7 @@ function db2_search_POST pPath,pQuery,pStart,pMaxResults,pMode
 end db2_search_POST
 
 function db2_create_folder_v2_POST pPath,pAutorename
-   if pAutorename is empty then put "False" into pAutorename
+   if pAutorename is empty then put "false" into pAutorename
    return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," & db2_Q("autorename") & ": " & (pAutoRename))
 end db2_create_folder_v2_POST
 
@@ -6668,18 +6668,18 @@ function db2_permanently_delete_POST pPath
 end db2_permanently_delete_POST
 
 function db2_copy_v2_POST pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
-   if pAllowSharedFolder is empty then put "False" into pAllowSharedFolder
-   if pAutorename is empty then put "False" into pAutorename
-   if pAlowOwnershipTransfer is empty then put "False" into pAlowOwnershipTransfer
+   if pAllowSharedFolder is empty then put "false" into pAllowSharedFolder
+   if pAutorename is empty then put "false" into pAutorename
+   if pAlowOwnershipTransfer is empty then put "false" into pAlowOwnershipTransfer
    return db2_CB(db2_Q("from_path") & ": " & db2_Q(pPathFrom) & "," & db2_Q("to_path") & ": " & db2_Q(pPathTo)& "," &  \
    db2_Q("allow_shared_folder") & ": " & (pAllowSharedFolder) & "," & db2_Q("autorename") & ": " & (pAutoRename) & "," &  \
    db2_Q("allow_ownership_transfer") & ": " & (pAllowOwnershipTransfer))
 end db2_copy_v2_POST
 
 function db2_copy_batch_POST pPathFromAndToArray,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
-   if pAllowSharedFolder is empty then put "False" into pAllowSharedFolder
-   if pAutorename is empty then put "False" into pAutorename
-   if pAlowOwnershipTransfer is empty then put "False" into pAlowOwnershipTransfer
+   if pAllowSharedFolder is empty then put "false" into pAllowSharedFolder
+   if pAutorename is empty then put "false" into pAutorename
+   if pAlowOwnershipTransfer is empty then put "false" into pAlowOwnershipTransfer
    --
    put empty into tEntriesString
    repeat for each key rKey in pPathFromAndToArray
@@ -6699,18 +6699,18 @@ function db2_copy_batch_check_POST pAsyncJobId
 end db2_copy_batch_check_POST
 
 function db2_move_v2_POST pPathFrom,pPathTo,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
-   if pAllowSharedFolder is empty then put "False" into pAllowSharedFolder
-   if pAutorename is empty then put "False" into pAutorename
-   if pAlowOwnershipTransfer is empty then put "False" into pAlowOwnershipTransfer
+   if pAllowSharedFolder is empty then put "false" into pAllowSharedFolder
+   if pAutorename is empty then put "false" into pAutorename
+   if pAlowOwnershipTransfer is empty then put "false" into pAlowOwnershipTransfer
    return db2_CB(db2_Q("from_path") & ": " & db2_Q(pPathFrom) & "," & db2_Q("to_path") & ": " & db2_Q(pPathTo)& "," &  \
    db2_Q("allow_shared_folder") & ": " & (pAllowSharedFolder) & "," & db2_Q("autorename") & ": " & (pAutoRename) & "," &  \
    db2_Q("allow_ownership_transfer") & ": " & (pAllowOwnershipTransfer))
 end db2_move_v2_POST
 
 function db2_move_batch_POST pPathFromAndToArray,pAllowSharedFolder,pAutoRename,pAllowOwnershipTransfer
-   if pAllowSharedFolder is empty then put "False" into pAllowSharedFolder
-   if pAutorename is empty then put "False" into pAutorename
-   if pAlowOwnershipTransfer is empty then put "False" into pAlowOwnershipTransfer
+   if pAllowSharedFolder is empty then put "false" into pAllowSharedFolder
+   if pAutorename is empty then put "false" into pAutorename
+   if pAlowOwnershipTransfer is empty then put "false" into pAlowOwnershipTransfer
    --
    put empty into tEntriesString
    repeat for each key rKey in pPathFromAndToArray
@@ -6912,9 +6912,9 @@ function db2_add_file_member_POST pFile,pMembersArray,pMessage,pQuiet,pAccessLev
    "add_message_as_comment": false}
    */
    local tMemberString,tString
-   if pQuiet is empty then put "False" into pQuiet
+   if pQuiet is empty then put "false" into pQuiet
    if pAccessLevel is empty then put "viewer" into pAccessLevel
-   if pAddMessageAsComment is empty then put "False" into pAddMessageAsComment
+   if pAddMessageAsComment is empty then put "false" into pAddMessageAsComment
    --
    put db2_Q("file") & ": " & db2_Q(pFile) & "," after tString
    put empty into tMemberString
@@ -6995,10 +6995,10 @@ function db2_list_file_members_POST pFile,pActions,pIncludeInherited,pLimit
    "limit": 100
    }
    */
-   if pIncludeInherited is empty then put "False" into pIncludeMediaInfo
-   if pLimit is empty then put "False" into pIncludeDeleted
-   if pIncludeHasExplicitSharedMembers is empty then put "False" into pIncludeHasExplicitSharedMembers
-   --if pIncludePropertyTemplates is empty then put "False" into pIncludePropertyTemplates
+   if pIncludeInherited is empty then put "false" into pIncludeMediaInfo
+   if pLimit is empty then put "false" into pIncludeDeleted
+   if pIncludeHasExplicitSharedMembers is empty then put "false" into pIncludeHasExplicitSharedMembers
+   --if pIncludePropertyTemplates is empty then put "false" into pIncludePropertyTemplates
    --
    return db2_CB(db2_Q("path") & ": " & db2_Q(pPath) & "," & db2_Q("include_media_info") & ": " & pIncludeMediaInfo & \
          "," & db2_Q("include_deleted") & ": " & pIncludeDeleted & \
@@ -7104,7 +7104,7 @@ function db2_add_folder_member_POST pSharedFolderId,pMembersArray,pQuiet,pCustom
    #--custom_message String? Optional message to display to added members in their invitation. 
    This field is optional.
    */
-   if pQuiet is empty then put "False" into pQuiet
+   if pQuiet is empty then put "false" into pQuiet
    if pCustomMessage is empty then put "" into pCustomMessage
    return db2_CB(db2_Q("shared_folder_id") & ": " & db2_Q(pSharedFolderId) & "," & db2_Q("members") & ": " & db2_FormatAddFolderMembers(pMembers) & "," & db2_Q("quiet") & ": " & pQuiet & "," & db2_Q("custom_message") & ": " & db2_Q(pCustomMessage))
 end db2_add_folder_member_POST
@@ -7596,7 +7596,7 @@ end db2_update_folder_policy_POST
 #-- ------------------------------------------------------------------------------------------------------------
 #-- --------------property groups and fields -------------------------------------------------------
 
- pFieldsArray
+function db2_FieldsString pFieldsArray
    /*
    used by
    db2_templates_add_for_user_POST
