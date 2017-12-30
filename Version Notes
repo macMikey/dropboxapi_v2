@@ -11,6 +11,8 @@ db2_templates_update_for_user
 Updated Notes:
 db2_list 
 
+Replaced "False" with "false" throughout.
+
 v2.1
 added or updated
 file_properties-properties_add
