@@ -7,6 +7,7 @@ db2_create_POST
 db2_update_POST
 db2_templates_add_for_user_POST
 db2_templates_update_for_user
+db2_get_metadata_POST
 
 Updated Notes:
 db2_list 
