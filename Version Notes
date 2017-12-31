@@ -10,6 +10,8 @@ db2_templates_update_for_user
 db2_get_metadata_POST
 db2_list_folder_POST
 db2_list_folder_get_latest_cursor_POST
+db2_UpdatePropertyGroupsString
+db2_properties_search_POST
 
 Updated Notes:
 db2_list 
