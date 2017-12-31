@@ -1,5 +1,3 @@
------------------------------------------------------------------------------
------------------------------------------------------------------------------
 ------db2 Library start--------------------------------------------------------
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -497,6 +495,7 @@ pUpdatePropertyGroupsArray[2][remove_fields]=	SubTopic
 
 --
 for POST
+#"remove_fields": [] is OK to include but is not outputed by db2_UpdatePropertyGroupsString in the POST handler
 {"path": "folder1/testfile2.txt",
 "update_property_groups": [{"template_id": "ptid:1a5n2i6d3OYEAAAAAAAAAYa",
 "add_or_update_fields": [{"name": "Security Policy","value": "Confidential"}],
@@ -547,7 +546,7 @@ end db2_properties_update
 db2_templates_add_for_user pAccessToken,pTemplateName,pTemplateDescription,pFieldsArray
 --
 Description
-Add a specified template.
+Add a specified template. There is a limit of 16 templates, each with a maximum of 32 properties.
 Apps must have full Dropbox access to use this endpoint.
 --
 pFieldsArray would be an array containing the field names and descriptions and types (string)
@@ -4969,7 +4968,7 @@ This field is optional.
 
 function db2_API2 pHeader,pPost,pURL
    local tPostReturn
-   global gError
+   local tError
    --global error for checking manually
    set socketTimeoutInterval to 30000  --30 seconds
    put the httpHeaders into oldHTTPHeaders
@@ -4978,13 +4977,13 @@ function db2_API2 pHeader,pPost,pURL
    put textencode(pPost,"UTF-8") into pPost --gmc july 2016
    post pPost to URL pURL
    put it into tPostReturn
-   put the result into gError
+   put the result into tError
    set the httpHeaders to oldHTTPHeaders
    --return tPostReturn
-   if gError is empty then
+   if tError is empty then
       return tPostReturn for value
    else
-      return gError for error
+      return tError for error
    end if
 end db2_API2
 
@@ -6377,13 +6376,13 @@ function db2_properties_search_POST pQueryText,pQueryField,pQueryMode,pLogicalOp
       return db2_CB(db2_Q("queries") & ": " & \
             db2_SB(db2_CB(db2_Q("query") & ": " & db2_Q(pQueryText) & "," & \
             db2_Q("mode") & ": " & db2_CB(db2_Q(".tag") & ": " & db2_Q(pQueryMode) & "," & db2_Q(pQueryMode) & ": " & db2_Q(pQueryField)) & "," & \
-            db2_Q(".logical_operator") & ": " & db2_Q(pLogicalOperator))) & "," & \
+            db2_Q("logical_operator") & ": " & db2_Q(pLogicalOperator))) & "," & \
             db2_Q("template_filter") & ": " & db2_CB(db2_Q(".tag") & ": " & db2_Q("filter_none")))
    else
       return db2_CB(db2_Q("queries") & ": " & \
             db2_SB(db2_CB(db2_Q("query") & ": " & db2_Q(pQueryText) & "," & \
             db2_Q("mode") & ": " & db2_CB(db2_Q(".tag") & ": " & db2_Q(pQueryMode) & "," & db2_Q(pQueryMode) & ": " & db2_Q(pQueryField)) & "," & \
-            db2_Q(".logical_operator") & ": " & db2_Q(pLogicalOperator))) & "," & \
+            db2_Q("logical_operator") & ": " & db2_Q(pLogicalOperator))) & "," & \
             db2_Q("template_filter") & ": " & db2_CB(db2_Q(".tag") & ": " & db2_Q("filter_some") & "," &  \
             db2_Q("filter_some") & ": " & db2_SBQListFromCRList(pFilterTemplateIDs)))
    end if
@@ -7736,13 +7735,17 @@ function db2_UpdatePropertyGroupsString pUpdatePropertyGroupsArray
          if last char of tFieldStrings is comma then delete last char of tFieldStrings  --delete trailing comma
          --
          if pUpdatePropertyGroupsArray[rTemplateKeyNum]["remove_fields"] is empty then 
+            #can omit remove fields if empty
+            --             put db2_CB(db2_Q("template_id") & ": " & db2_Q(pUpdatePropertyGroupsArray[rTemplateKeyNum]["template_id"]) & "," &  \
+               --                   db2_Q("add_or_update_fields") & ": " & db2_SB(tFieldStrings)) & "," after tTemplateStrings
             put db2_CB(db2_Q("template_id") & ": " & db2_Q(pUpdatePropertyGroupsArray[rTemplateKeyNum]["template_id"]) & "," &  \
                   db2_Q("add_or_update_fields") & ": " & db2_SB(tFieldStrings) & "," &  \
                   db2_Q("remove_fields") & ": " & db2_SB()) & "," after tTemplateStrings
          else
             put db2_CB(db2_Q("template_id") & ": " & db2_Q(pUpdatePropertyGroupsArray[rTemplateKeyNum]["template_id"]) & "," &  \
                   db2_Q("add_or_update_fields") & ": " & db2_SB(tFieldStrings) & "," &  \
-                  db2_Q("remove_fields") & ": " & db2_SBQListFromCRList(pUpdatePropertyGroupsArray[rTemplateKeyNum]["remove_fields"])) & "," after tTemplateStrings
+                  db2_Q("remove_fields") & ": " &  \
+                  db2_SBQListFromCRList(pUpdatePropertyGroupsArray[rTemplateKeyNum]["remove_fields"])) & "," after tTemplateStrings
          end if
          --
       end repeat
@@ -7785,5 +7788,3 @@ end db2_SBQListFromCRList
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 ------db2 Library end--------------------------------------------------------
------------------------------------------------------------------------------
------------------------------------------------------------------------------
